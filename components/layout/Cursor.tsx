@@ -2,13 +2,17 @@
 
 import { useEffect, useRef } from "react";
 
+/**
+ * CAD-style reticle cursor: four thin corner brackets around a 1px pip.
+ * Expands + shifts to cyan on hoverable targets. No screen-blend glow —
+ * the AI-portfolio look was mostly that glowing dot.
+ */
 export function Cursor() {
-  const dotRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const dot = dotRef.current!;
-    const ring = ringRef.current!;
+    const el = ref.current;
+    if (!el) return;
 
     let x = window.innerWidth / 2;
     let y = window.innerHeight / 2;
@@ -18,54 +22,53 @@ export function Cursor() {
     const onMove = (e: MouseEvent) => {
       x = e.clientX;
       y = e.clientY;
-      dot.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
     };
 
-    const isHover = (el: EventTarget | null): boolean => {
-      if (!(el instanceof HTMLElement)) return false;
-      if (el.dataset.cursor === "hover") return true;
-      if (el.tagName === "A" || el.tagName === "BUTTON") return true;
-      if (el.getAttribute("role") === "button") return true;
-      return el.parentElement ? isHover(el.parentElement) : false;
+    const isHover = (t: EventTarget | null): boolean => {
+      if (!(t instanceof HTMLElement)) return false;
+      if (t.dataset.cursor === "hover") return true;
+      if (t.tagName === "A" || t.tagName === "BUTTON") return true;
+      if (t.getAttribute("role") === "button") return true;
+      return t.parentElement ? isHover(t.parentElement) : false;
     };
 
     const onOver = (e: MouseEvent) => {
-      if (isHover(e.target)) {
-        ring.style.width = "60px";
-        ring.style.height = "60px";
-        ring.style.borderColor = "#00e5ff";
-        ring.style.boxShadow = "0 0 30px rgba(0, 229, 255, 0.7)";
-      } else {
-        ring.style.width = "34px";
-        ring.style.height = "34px";
-        ring.style.borderColor = "#00ff41";
-        ring.style.boxShadow = "0 0 20px rgba(0, 255, 65, 0.4)";
-      }
+      el.classList.toggle("is-hover", isHover(e.target));
     };
+
+    const onDown = () => el.classList.add("is-down");
+    const onUp = () => el.classList.remove("is-down");
 
     let raf = 0;
     const loop = () => {
-      rx += (x - rx) * 0.18;
-      ry += (y - ry) * 0.18;
-      ring.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
+      rx += (x - rx) * 0.32;
+      ry += (y - ry) * 0.32;
+      el.style.transform = `translate(${rx}px, ${ry}px) translate(-50%, -50%)`;
       raf = requestAnimationFrame(loop);
     };
     loop();
 
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseover", onOver);
+    window.addEventListener("mousedown", onDown);
+    window.addEventListener("mouseup", onUp);
 
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseover", onOver);
+      window.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mouseup", onUp);
     };
   }, []);
 
   return (
-    <>
-      <div ref={dotRef} className="cursor-dot hidden md:block" />
-      <div ref={ringRef} className="cursor-ring hidden md:block" />
-    </>
+    <div ref={ref} className="cursor-reticle hidden md:block" aria-hidden>
+      <span className="corner corner-tl" />
+      <span className="corner corner-tr" />
+      <span className="corner corner-bl" />
+      <span className="corner corner-br" />
+      <span className="pip" />
+    </div>
   );
 }

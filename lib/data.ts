@@ -9,6 +9,7 @@ export const identity = {
     github: "https://github.com/ahmadexe",
     medium: "https://medium.com/@ahmadexe",
     linkedin: "https://www.linkedin.com/in/ahmadexe/",
+    email: "muahmad710@gmail.com",
   },
 };
 

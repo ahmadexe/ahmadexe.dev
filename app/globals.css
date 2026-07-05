@@ -327,31 +327,75 @@ body {
 .tilt-inner { transform-style: preserve-3d; }
 .tilt-layer { transform: translateZ(40px); }
 
-/* ---------- custom cursor ---------- */
+/* ---------- reticle cursor ---------- */
 
-.cursor-dot,
-.cursor-ring {
+.cursor-reticle {
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
   pointer-events: none;
   z-index: 9999;
-  mix-blend-mode: screen;
-  left: 0;
+  color: var(--matrix);
+  will-change: transform, width, height, color;
+  transition:
+    width 0.18s ease,
+    height 0.18s ease,
+    color 0.18s ease;
+}
+
+.cursor-reticle .corner {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-color: currentColor;
+  border-style: solid;
+  border-width: 0;
+  filter: drop-shadow(0 0 2px currentColor);
+}
+.cursor-reticle .corner-tl {
   top: 0;
+  left: 0;
+  border-top-width: 1px;
+  border-left-width: 1px;
 }
-.cursor-dot {
-  width: 6px;
-  height: 6px;
-  background: var(--matrix);
-  border-radius: 50%;
-  box-shadow: 0 0 12px var(--matrix);
+.cursor-reticle .corner-tr {
+  top: 0;
+  right: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+.cursor-reticle .corner-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+.cursor-reticle .corner-br {
+  bottom: 0;
+  right: 0;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+.cursor-reticle .pip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  background: currentColor;
   transform: translate(-50%, -50%);
 }
-.cursor-ring {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--matrix);
-  border-radius: 50%;
-  box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
-  transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, border-color 0.2s;
+
+.cursor-reticle.is-hover {
+  width: 36px;
+  height: 36px;
+  color: var(--cyan);
+}
+
+.cursor-reticle.is-down {
+  width: 16px;
+  height: 16px;
 }
