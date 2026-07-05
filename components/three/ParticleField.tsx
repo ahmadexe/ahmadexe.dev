@@ -28,10 +28,16 @@ export function ParticleField({
     return [pos, sz];
   }, [count, radius]);
 
+  const target = useRef(new THREE.Vector2(0, 0));
+
   useFrame((state) => {
     if (!ref.current) return;
-    ref.current.rotation.y = state.clock.elapsedTime * 0.02;
-    ref.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.05) * 0.1;
+    target.current.x += (state.pointer.x - target.current.x) * 0.03;
+    target.current.y += (state.pointer.y - target.current.y) * 0.03;
+    ref.current.rotation.y =
+      state.clock.elapsedTime * 0.02 + target.current.x * 0.15;
+    ref.current.rotation.x =
+      Math.sin(state.clock.elapsedTime * 0.05) * 0.1 - target.current.y * 0.12;
   });
 
   return (

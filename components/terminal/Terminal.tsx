@@ -348,18 +348,23 @@ export function Terminal() {
                   <span className="text-ink-dim">:</span>
                   <span className="text-matrix">{path}</span>
                   <span className="text-ink-dim">$</span>
-                  <input
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={onKey}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    className="flex-1 bg-transparent outline-none text-ink caret-transparent min-w-[80px]"
-                    aria-label="terminal input"
-                  />
-                  <span className="caret" />
+                  <div className="relative flex-1 flex items-center min-w-[80px]">
+                    <span className="whitespace-pre text-ink pointer-events-none">
+                      {input}
+                    </span>
+                    <span className="caret" />
+                    <input
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={onKey}
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="absolute inset-0 w-full h-full bg-transparent outline-none text-transparent caret-transparent selection:text-transparent"
+                      aria-label="terminal input"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

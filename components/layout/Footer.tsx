@@ -3,9 +3,24 @@
 import { useEffect, useState } from "react";
 import { identity } from "@/lib/data";
 
+const EMAIL = "muahmad710@gmail.com";
+
 export function Footer() {
   const [year, setYear] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
   useEffect(() => setYear(new Date().getFullYear()), []);
+
+  const onEmailClick = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(EMAIL).then(
+        () => {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1800);
+        },
+        () => {}
+      );
+    }
+  };
 
   return (
     <footer
@@ -30,14 +45,23 @@ export function Footer() {
               // links
             </div>
             <ul className="space-y-2">
-              <li>
+              <li className="flex items-center gap-3">
                 <a
-                  href="mailto:muahmad710@gmail.com"
+                  href={`mailto:${EMAIL}`}
+                  onClick={onEmailClick}
                   className="link"
                   data-cursor="hover"
                 >
-                  → muahmad710@gmail.com
+                  → {EMAIL}
                 </a>
+                <span
+                  className={`text-[10px] uppercase tracking-widest text-matrix transition-opacity duration-200 ${
+                    copied ? "opacity-100" : "opacity-0"
+                  }`}
+                  aria-live="polite"
+                >
+                  copied ✓
+                </span>
               </li>
               <li>
                 <a

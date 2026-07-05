@@ -100,6 +100,7 @@ function useDistortShader() {
 }
 
 export function HeroCore() {
+  const groupRef = useRef<THREE.Group>(null);
   const solidRef = useRef<THREE.Mesh>(null);
   const wireRef = useRef<THREE.Mesh>(null);
   const ring1 = useRef<THREE.Mesh>(null);
@@ -107,10 +108,24 @@ export function HeroCore() {
   const ring3 = useRef<THREE.Mesh>(null);
 
   const shader = useDistortShader();
+  const pointer = useRef(new THREE.Vector2(0, 0));
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     shader.uniforms.uTime.value = t;
+
+    // Smooth pointer follow (pointer is normalized -1..1 in R3F state)
+    pointer.current.x += (state.pointer.x - pointer.current.x) * 0.05;
+    pointer.current.y += (state.pointer.y - pointer.current.y) * 0.05;
+    const px = pointer.current.x;
+    const py = pointer.current.y;
+
+    if (groupRef.current) {
+      groupRef.current.rotation.y = px * 0.35;
+      groupRef.current.rotation.x = -py * 0.25;
+      groupRef.current.position.x = px * 0.25;
+      groupRef.current.position.y = py * 0.2;
+    }
     if (solidRef.current) {
       solidRef.current.rotation.x = t * 0.15;
       solidRef.current.rotation.y = t * 0.2;
@@ -118,25 +133,29 @@ export function HeroCore() {
     if (wireRef.current) {
       wireRef.current.rotation.x = t * 0.15;
       wireRef.current.rotation.y = t * 0.2;
-      const s = 1 + Math.sin(t * 2) * 0.02;
+      const s = 1 + Math.sin(t * 2) * 0.02 + Math.abs(px + py) * 0.03;
       wireRef.current.scale.setScalar(s);
     }
     if (ring1.current) {
-      ring1.current.rotation.x = t * 0.4;
-      ring1.current.rotation.y = t * 0.3;
+      ring1.current.rotation.x = t * 0.4 + py * 0.3;
+      ring1.current.rotation.y = t * 0.3 + px * 0.3;
     }
     if (ring2.current) {
-      ring2.current.rotation.x = -t * 0.25;
-      ring2.current.rotation.z = t * 0.35;
+      ring2.current.rotation.x = -t * 0.25 - py * 0.2;
+      ring2.current.rotation.z = t * 0.35 + px * 0.2;
     }
     if (ring3.current) {
-      ring3.current.rotation.y = t * 0.5;
-      ring3.current.rotation.z = -t * 0.2;
+      ring3.current.rotation.y = t * 0.5 + px * 0.4;
+      ring3.current.rotation.z = -t * 0.2 - py * 0.3;
     }
+
+    // Shader distortion pulses gently with cursor proximity
+    shader.uniforms.uAmp.value =
+      0.15 + Math.min(0.12, Math.hypot(px, py) * 0.1);
   });
 
   return (
-    <group>
+    <group ref={groupRef}>
       <mesh ref={solidRef}>
         <icosahedronGeometry args={[1.7, 32]} />
         <shaderMaterial args={[shader]} transparent />
