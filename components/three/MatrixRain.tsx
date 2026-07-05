@@ -38,10 +38,12 @@ export function MatrixRain({
   count = 2400,
   spread = 60,
   depth = 30,
+  velocityRef,
 }: {
   count?: number;
   spread?: number;
   depth?: number;
+  velocityRef?: React.MutableRefObject<number>;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const dataRef = useRef<
@@ -86,9 +88,10 @@ export function MatrixRain({
     if (!mesh) return;
     const data = dataRef.current;
     const half = spread;
+    const boost = 1 + (velocityRef?.current ?? 0) * 5;
     for (let i = 0; i < data.length; i++) {
       const p = data[i];
-      p.y -= p.speed * dt;
+      p.y -= p.speed * dt * boost;
       if (p.y < -half) {
         p.y = half + Math.random() * 5;
         p.x = (Math.random() - 0.5) * spread * 2;

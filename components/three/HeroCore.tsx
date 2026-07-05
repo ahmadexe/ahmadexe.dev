@@ -99,7 +99,11 @@ function useDistortShader() {
   );
 }
 
-export function HeroCore() {
+export function HeroCore({
+  progressRef,
+}: {
+  progressRef?: React.MutableRefObject<number>;
+} = {}) {
   const groupRef = useRef<THREE.Group>(null);
   const solidRef = useRef<THREE.Mesh>(null);
   const wireRef = useRef<THREE.Mesh>(null);
@@ -120,12 +124,21 @@ export function HeroCore() {
     const px = pointer.current.x;
     const py = pointer.current.y;
 
+    // Fade the whole core out as we scroll past the Hero chapter.
+    const progress = progressRef?.current ?? 0;
+    const fade = 1 - Math.min(1, Math.max(0, (progress - 0.05) / 0.14));
+
     if (groupRef.current) {
       groupRef.current.rotation.y = px * 0.35;
       groupRef.current.rotation.x = -py * 0.25;
       groupRef.current.position.x = px * 0.25;
       groupRef.current.position.y = py * 0.2;
+      groupRef.current.scale.setScalar(0.7 + fade * 0.3);
+      groupRef.current.visible = fade > 0.01;
     }
+    shader.uniforms.uAmp.value =
+      0.15 + Math.min(0.12, Math.hypot(px, py) * 0.1);
+    // apply fade via uniform-tied opacity approximation is complex; use scale-only.
     if (solidRef.current) {
       solidRef.current.rotation.x = t * 0.15;
       solidRef.current.rotation.y = t * 0.2;
@@ -149,9 +162,6 @@ export function HeroCore() {
       ring3.current.rotation.z = -t * 0.2 - py * 0.3;
     }
 
-    // Shader distortion pulses gently with cursor proximity
-    shader.uniforms.uAmp.value =
-      0.15 + Math.min(0.12, Math.hypot(px, py) * 0.1);
   });
 
   return (

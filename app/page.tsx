@@ -8,6 +8,7 @@ import { GridOverlay } from "@/components/layout/GridOverlay";
 import { Cursor } from "@/components/layout/Cursor";
 import { BootOverlay } from "@/components/layout/BootOverlay";
 import { KonamiOverride } from "@/components/layout/KonamiOverride";
+import { SceneScrim } from "@/components/layout/SceneScrim";
 import { Hero } from "@/components/hero/Hero";
 import { Terminal } from "@/components/terminal/Terminal";
 import { About } from "@/components/about/About";
@@ -31,6 +32,7 @@ export default function Home() {
       <Cursor />
       <GridOverlay />
       <BackgroundScene />
+      <SceneScrim />
       <Nav />
       <main className="relative z-10">
         <Hero />

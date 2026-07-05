@@ -1,25 +1,34 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { identity } from "@/lib/data";
 
 const EMAIL = "muahmad710@gmail.com";
+const GMAIL_COMPOSE = `https://mail.google.com/mail/?view=cm&fs=1&to=${EMAIL}`;
 
 export function Footer() {
   const [year, setYear] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => setYear(new Date().getFullYear()), []);
 
-  const onEmailClick = () => {
+  const onEmailClick = (e: React.MouseEvent) => {
+    // Copy to clipboard as a helpful side-effect but let the native mailto: fire.
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(EMAIL).then(
-        () => {
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 1800);
-        },
-        () => {}
-      );
+      navigator.clipboard.writeText(EMAIL).catch(() => {});
     }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2400);
+    // If the user has no mail client, offer Gmail compose after a beat.
+    const t = window.setTimeout(() => {
+      // best-effort: if the page is still focused (mail client didn't take over)
+      if (document.hasFocus()) {
+        window.open(GMAIL_COMPOSE, "_blank", "noopener,noreferrer");
+      }
+    }, 600);
+    // If the mailto is going to work, focus will leave the page — clear the timer.
+    const onBlur = () => window.clearTimeout(t);
+    window.addEventListener("blur", onBlur, { once: true });
   };
 
   return (
@@ -54,14 +63,6 @@ export function Footer() {
                 >
                   → {EMAIL}
                 </a>
-                <span
-                  className={`text-[10px] uppercase tracking-widest text-matrix transition-opacity duration-200 ${
-                    copied ? "opacity-100" : "opacity-0"
-                  }`}
-                  aria-live="polite"
-                >
-                  copied ✓
-                </span>
               </li>
               <li>
                 <a
@@ -130,6 +131,31 @@ export function Footer() {
           </div>
         </div>
       </div>
+      <AnimatePresence>
+        {copied && (
+          <motion.div
+            key="email-toast"
+            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] pointer-events-none"
+          >
+            <div className="relative flex items-center gap-3 px-5 py-3 rounded-full border border-matrix/60 bg-black/85 backdrop-blur-md shadow-matrix-strong">
+              <span className="w-2 h-2 rounded-full bg-matrix animate-pulse shadow-[0_0_10px_var(--matrix)]" />
+              <div className="flex flex-col">
+                <span className="text-matrix text-[10px] uppercase tracking-[0.35em]">
+                  email copied
+                </span>
+                <span className="text-ink text-sm font-mono">
+                  {EMAIL}
+                </span>
+              </div>
+              <span className="text-matrix text-lg glow-matrix">✓</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </footer>
   );
 }

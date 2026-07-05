@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import {
+  motion,
+  useInView,
+  useMotionValue,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import { FS } from "./fileSystem";
 import { identity } from "@/lib/data";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -78,6 +85,7 @@ export function Terminal() {
     { type: "banner", text: banner },
   ]);
   const [input, setInput] = useState("");
+  const [caret, setCaret] = useState(0);
   const [history, setHistory] = useState<string[]>([]);
   const [histIdx, setHistIdx] = useState<number>(-1);
   const [path, setPath] = useState("~");
@@ -95,15 +103,78 @@ export function Terminal() {
   const rotateX = useTransform(scrollYProgress, [0, 0.5, 1], [-8, 2, 10]);
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.9, 1, 0.92]);
 
+  // Mouse-driven push/tilt on the CRT
+  const crtRef = useRef<HTMLDivElement>(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const smx = useSpring(mx, { stiffness: 90, damping: 18, mass: 0.7 });
+  const smy = useSpring(my, { stiffness: 90, damping: 18, mass: 0.7 });
+  const mouseRotY = useTransform(smx, [-0.5, 0.5], [-14, 14]);
+  const mouseRotX = useTransform(smy, [-0.5, 0.5], [10, -10]);
+  const pushX = useTransform(smx, [-0.5, 0.5], [-14, 14]);
+  const pushY = useTransform(smy, [-0.5, 0.5], [-8, 8]);
+  const glowX = useTransform(smx, [-0.5, 0.5], ["10%", "90%"]);
+  const glowY = useTransform(smy, [-0.5, 0.5], ["10%", "90%"]);
+
+  const onCrtMove = (e: React.MouseEvent) => {
+    if (!crtRef.current) return;
+    const rect = crtRef.current.getBoundingClientRect();
+    mx.set((e.clientX - rect.left) / rect.width - 0.5);
+    my.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  const onCrtLeave = () => {
+    mx.set(0);
+    my.set(0);
+  };
+
+  // Focus without scroll-jump when the terminal enters view.
   useEffect(() => {
-    if (inView) inputRef.current?.focus();
+    if (inView) inputRef.current?.focus({ preventScroll: true });
   }, [inView]);
 
+  // Global "type anywhere" while the terminal is on-screen.
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
+    if (!inView) return;
+    const onKeyDownGlobal = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const tgt = e.target as HTMLElement | null;
+      if (
+        tgt &&
+        (tgt.tagName === "INPUT" ||
+          tgt.tagName === "TEXTAREA" ||
+          tgt.isContentEditable)
+      ) {
+        return;
+      }
+      // Only steal focus for keys that actually type or navigate the buffer.
+      if (
+        e.key.length === 1 ||
+        e.key === "Backspace" ||
+        e.key === "Enter" ||
+        e.key === "Tab" ||
+        e.key === "ArrowUp" ||
+        e.key === "ArrowDown" ||
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight"
+      ) {
+        inputRef.current?.focus({ preventScroll: true });
+      }
+    };
+    window.addEventListener("keydown", onKeyDownGlobal);
+    return () => window.removeEventListener("keydown", onKeyDownGlobal);
+  }, [inView]);
+
+  // Auto-scroll only when the user is already near the bottom, and use
+  // "auto" (instant) — smooth-scroll on every entry causes visible jank.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const nearBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    if (nearBottom) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [entries]);
 
   const run = (raw: string) => {
@@ -184,6 +255,7 @@ export function Terminal() {
     if (e.key === "Enter") {
       run(input);
       setInput("");
+      setCaret(0);
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (history.length === 0) return;
@@ -191,6 +263,7 @@ export function Terminal() {
         histIdx === -1 ? history.length - 1 : Math.max(0, histIdx - 1);
       setHistIdx(next);
       setInput(history[next]);
+      setCaret(history[next].length);
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       if (histIdx === -1) return;
@@ -198,14 +271,19 @@ export function Terminal() {
       if (next >= history.length) {
         setHistIdx(-1);
         setInput("");
+        setCaret(0);
       } else {
         setHistIdx(next);
         setInput(history[next]);
+        setCaret(history[next].length);
       }
     } else if (e.key === "Tab") {
       e.preventDefault();
       const completed = complete(input);
-      if (completed !== null) setInput(completed);
+      if (completed !== null) {
+        setInput(completed);
+        setCaret(completed.length);
+      }
     } else if (e.key === "l" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       setEntries([]);
@@ -277,10 +355,44 @@ export function Terminal() {
           }}
           className="relative mx-auto max-w-5xl"
         >
+          <motion.div
+            ref={crtRef}
+            onMouseMove={onCrtMove}
+            onMouseLeave={onCrtLeave}
+            style={{
+              rotateX: mouseRotX,
+              rotateY: mouseRotY,
+              x: pushX,
+              y: pushY,
+              transformPerspective: 1600,
+              transformStyle: "preserve-3d",
+            }}
+            className="relative"
+          >
+            {/* Ambient floor glow that follows the tilt */}
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -inset-10 rounded-[40px] blur-3xl"
+              style={{
+                background: useTransform(
+                  [glowX, glowY] as any,
+                  ([gx, gy]: any) =>
+                    `radial-gradient(500px circle at ${gx} ${gy}, rgba(0,255,65,0.22), transparent 65%)`
+                ) as any,
+                transform: "translateZ(-60px)",
+              }}
+            />
+
           {/* CRT bezel */}
-          <div className="relative p-3 md:p-4 rounded-3xl bg-gradient-to-br from-[#0a1a10] to-[#020604] shadow-matrix-strong">
+          <div
+            className="relative p-3 md:p-4 rounded-3xl bg-gradient-to-br from-[#0a1a10] to-[#020604] shadow-matrix-strong"
+            style={{ transformStyle: "preserve-3d" }}
+          >
             {/* top bezel: fake screws + label */}
-            <div className="flex items-center justify-between px-2 pb-2 text-[10px] text-ink-dim/40 uppercase tracking-widest">
+            <div
+              className="flex items-center justify-between px-2 pb-2 text-[10px] text-ink-dim/40 uppercase tracking-widest"
+              style={{ transform: "translateZ(28px)" }}
+            >
               <div className="flex items-center gap-3">
                 <span className="w-2 h-2 rounded-full bg-matrix/70 shadow-[0_0_6px_var(--matrix)]" />
                 <span className="w-2 h-2 rounded-full bg-cyan-accent/50" />
@@ -296,6 +408,7 @@ export function Terminal() {
             {/* Screen */}
             <div
               className="crt relative h-[520px] md:h-[560px]"
+              style={{ transform: "translateZ(0px)" }}
               onClick={() => inputRef.current?.focus()}
             >
               <div
@@ -350,13 +463,34 @@ export function Terminal() {
                   <span className="text-ink-dim">$</span>
                   <div className="relative flex-1 flex items-center min-w-[80px]">
                     <span className="whitespace-pre text-ink pointer-events-none">
-                      {input}
+                      {input.slice(0, caret)}
                     </span>
                     <span className="caret" />
+                    <span className="whitespace-pre text-ink pointer-events-none">
+                      {input.slice(caret)}
+                    </span>
                     <input
                       ref={inputRef}
                       value={input}
-                      onChange={(e) => setInput(e.target.value)}
+                      onChange={(e) => {
+                        setInput(e.target.value);
+                        setCaret(e.target.selectionStart ?? e.target.value.length);
+                      }}
+                      onKeyUp={(e) =>
+                        setCaret(
+                          (e.currentTarget.selectionStart ?? input.length)
+                        )
+                      }
+                      onClick={(e) =>
+                        setCaret(
+                          (e.currentTarget.selectionStart ?? input.length)
+                        )
+                      }
+                      onSelect={(e) =>
+                        setCaret(
+                          (e.currentTarget.selectionStart ?? input.length)
+                        )
+                      }
                       onKeyDown={onKey}
                       autoComplete="off"
                       autoCorrect="off"
@@ -370,7 +504,10 @@ export function Terminal() {
             </div>
 
             {/* Bottom bezel: status line */}
-            <div className="mt-2 px-2 flex items-center justify-between text-[10px] text-ink-dim/40 uppercase tracking-widest">
+            <div
+              className="mt-2 px-2 flex items-center justify-between text-[10px] text-ink-dim/40 uppercase tracking-widest"
+              style={{ transform: "translateZ(28px)" }}
+            >
               <div>PID 0x0AE1 · MEM 42% · CPU 0.3%</div>
               <div className="flex items-center gap-4">
                 <span className="hidden md:inline">
@@ -384,8 +521,15 @@ export function Terminal() {
           </div>
 
           {/* stand */}
-          <div className="mx-auto mt-6 h-6 w-40 rounded-b-2xl bg-gradient-to-b from-[#0a1a10] to-transparent" />
-          <div className="mx-auto h-1 w-56 rounded-full bg-matrix/30 blur-sm" />
+          <div
+            className="mx-auto mt-6 h-6 w-40 rounded-b-2xl bg-gradient-to-b from-[#0a1a10] to-transparent"
+            style={{ transform: "translateZ(-40px)" }}
+          />
+          <div
+            className="mx-auto h-1 w-56 rounded-full bg-matrix/30 blur-sm"
+            style={{ transform: "translateZ(-60px)" }}
+          />
+          </motion.div>
         </motion.div>
       </div>
     </section>

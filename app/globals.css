@@ -231,22 +231,18 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.55;
 }
 .glitch::before {
   color: var(--cyan);
-  transform: translate(2px, 0);
+  transform: translate(1.5px, 0);
   clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
-  mix-blend-mode: screen;
 }
 .glitch::after {
   color: var(--magenta);
-  transform: translate(-2px, 0);
+  transform: translate(-1.5px, 0);
   clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
-  mix-blend-mode: screen;
 }
-.glitch:hover::before { animation: glitch-x 0.4s infinite; }
-.glitch:hover::after { animation: glitch-x 0.4s infinite reverse; }
 
 /* ---------- flicker ---------- */
 

@@ -1,32 +1,18 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
 import { Typewriter } from "@/components/ui/Typewriter";
 import { identity } from "@/lib/data";
 import { GlitchText } from "@/components/ui/GlitchText";
 
-const HeroScene = dynamic(
-  () => import("./HeroScene").then((m) => m.HeroScene),
-  { ssr: false }
-);
-
 export function Hero() {
-  const sceneRef = useRef<HTMLDivElement>(null);
-  const sceneInView = useInView(sceneRef, { margin: "10% 0px 10% 0px" });
   return (
     <section
       id="home"
       className="relative min-h-screen w-full overflow-hidden pt-24 pb-16"
     >
-      {/* 3D layer */}
-      <div ref={sceneRef} className="absolute inset-0 z-10">
-        {sceneInView && <HeroScene />}
-      </div>
-
-      {/* Gradient wash to keep text readable */}
-      <div className="pointer-events-none absolute inset-0 z-20 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.65)_60%,rgba(0,0,0,0.95)_100%)]" />
+      {/* Gradient wash to keep text readable — 3D lives in the shared background canvas */}
+      <div className="pointer-events-none absolute inset-0 z-20 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.4)_60%,rgba(0,0,0,0.75)_100%)]" />
 
       {/* Content */}
       <div className="relative z-30 max-w-[1600px] mx-auto px-6 md:px-12 flex flex-col justify-center min-h-[calc(100vh-6rem)]">
