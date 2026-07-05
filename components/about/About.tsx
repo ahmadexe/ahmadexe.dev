@@ -14,8 +14,8 @@ const AboutOrb = dynamic(
 const stats = [
   { label: "years shipping", value: "4+" },
   { label: "projects live", value: "numerous" },
-  { label: "awards", value: "5" },
-  { label: "articles", value: "5" },
+  { label: "awards", value: "20+" },
+  { label: "articles", value: "15+" },
 ];
 
 const stack = [

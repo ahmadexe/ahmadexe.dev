@@ -17,7 +17,7 @@ export function Speaking() {
         />
 
         <div className="relative max-w-5xl mx-auto">
-          <Waveform />
+          <BroadcastReadout />
           <div className="relative grid sm:grid-cols-2 gap-4 md:gap-6 mt-8">
             {talks.map((t, i) => (
               <TalkCard key={t.title} t={t} idx={i} />
@@ -69,33 +69,99 @@ function TalkCard({
   );
 }
 
-function Waveform() {
-  const bars = Array.from({ length: 48 });
+/**
+ * Broadcast readout — a transmission-console strip. Meta line (channel /
+ * carrier / status), a scanning line with a live cursor, and a stack of
+ * pulsing rings on the right that mimic a signal going out. No bar EQ.
+ */
+function BroadcastReadout() {
+  const rings = [0, 1, 2, 3];
   return (
-    <div className="pointer-events-none flex items-end justify-center gap-[3px] md:gap-1 h-12 md:h-16 opacity-60">
-      {bars.map((_, i) => (
-        <motion.span
-          key={i}
-          className="w-[3px] md:w-[4px] bg-gradient-to-t from-matrix/80 to-cyan-accent/80 shadow-[0_0_6px_var(--matrix)]"
-          initial={{ scaleY: 0.2 }}
-          animate={{
-            scaleY: [
-              0.2,
-              0.4 + Math.sin(i * 0.6) * 0.3 + 0.4,
-              0.3,
-              0.6 + Math.cos(i * 0.4) * 0.3 + 0.2,
-              0.2,
-            ],
-          }}
-          transition={{
-            duration: 2.2 + (i % 5) * 0.2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: (i % 12) * 0.05,
-          }}
-          style={{ transformOrigin: "bottom", height: "100%" }}
-        />
-      ))}
+    <div className="pointer-events-none select-none border border-matrix/25 bg-matrix/[0.02] backdrop-blur-sm relative overflow-hidden">
+      <span className="absolute -top-px -left-px w-3 h-3 border-t border-l border-matrix/70" />
+      <span className="absolute -top-px -right-px w-3 h-3 border-t border-r border-matrix/70" />
+      <span className="absolute -bottom-px -left-px w-3 h-3 border-b border-l border-matrix/70" />
+      <span className="absolute -bottom-px -right-px w-3 h-3 border-b border-r border-matrix/70" />
+
+      <div className="flex items-center justify-between px-4 md:px-6 pt-3 text-[10px] uppercase tracking-[0.3em] text-ink-dim/50">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-2 text-matrix">
+            <span className="w-1.5 h-1.5 bg-matrix rounded-full animate-pulse shadow-[0_0_8px_var(--matrix)]" />
+            on air
+          </span>
+          <span className="hidden sm:inline">ch.07 // ./mic</span>
+          <span className="hidden md:inline">carrier 108.4 MHz</span>
+        </div>
+        <div className="hidden sm:flex items-center gap-4">
+          <span>bitrate 320k</span>
+          <span className="text-matrix/70">signal.locked</span>
+        </div>
+      </div>
+
+      <div className="relative px-4 md:px-6 py-4 flex items-center gap-4 md:gap-6">
+        {/* Scan strip */}
+        <div className="relative flex-1 h-8 md:h-10 overflow-hidden">
+          {/* Tick baseline */}
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-matrix/25" />
+          <div
+            className="absolute inset-y-0 inset-x-0 opacity-40"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to right, var(--matrix) 0 1px, transparent 1px 22px)",
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+              maskImage:
+                "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+            }}
+          />
+          {/* Traveling cursor + trail */}
+          <motion.div
+            className="absolute top-0 h-full w-16 md:w-24"
+            initial={{ x: "-10%" }}
+            animate={{ x: ["-10%", "110%"] }}
+            transition={{
+              duration: 4.2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <div className="h-full w-full bg-gradient-to-r from-transparent via-matrix/40 to-matrix" />
+            <div className="absolute right-0 top-0 h-full w-px bg-matrix shadow-[0_0_12px_var(--matrix)]" />
+          </motion.div>
+        </div>
+
+        {/* Broadcast rings */}
+        <div className="relative w-14 h-10 md:w-20 md:h-12 shrink-0">
+          <span className="absolute inset-y-0 left-0 flex items-center">
+            <span className="w-1.5 h-1.5 bg-matrix rounded-full shadow-[0_0_10px_var(--matrix)]" />
+          </span>
+          {rings.map((i) => (
+            <motion.span
+              key={i}
+              className="absolute left-0 top-1/2 -translate-y-1/2 border border-matrix rounded-full"
+              initial={{ width: 8, height: 8, opacity: 0 }}
+              animate={{
+                width: [8, 80],
+                height: [8, 80],
+                opacity: [0.9, 0],
+              }}
+              transition={{
+                duration: 2.4,
+                repeat: Infinity,
+                ease: "easeOut",
+                delay: i * 0.6,
+              }}
+              style={{ marginLeft: -4, marginTop: 0 }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between px-4 md:px-6 pb-3 text-[10px] uppercase tracking-[0.3em] text-ink-dim/40">
+        <span>// transmitting</span>
+        <span className="hidden sm:inline">rooms indexed: {talks.length.toString().padStart(2, "0")}</span>
+        <span>utf-8</span>
+      </div>
     </div>
   );
 }
