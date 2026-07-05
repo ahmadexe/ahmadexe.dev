@@ -165,16 +165,15 @@ export function Terminal() {
     return () => window.removeEventListener("keydown", onKeyDownGlobal);
   }, [inView]);
 
-  // Auto-scroll only when the user is already near the bottom, and use
-  // "auto" (instant) — smooth-scroll on every entry causes visible jank.
+  // Always pin to bottom after a new entry. Measuring in a rAF ensures the
+  // newly-appended lines have laid out before we read scrollHeight.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const nearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    if (nearBottom) {
+    const raf = requestAnimationFrame(() => {
       el.scrollTop = el.scrollHeight;
-    }
+    });
+    return () => cancelAnimationFrame(raf);
   }, [entries]);
 
   const run = (raw: string) => {
