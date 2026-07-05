@@ -51,8 +51,12 @@ export const projects: Project[] = [
     accent: "cyan",
     links: [
       {
-        label: "GitHub",
+        label: "Mobile",
         url: "https://github.com/ahmadexe/PRISM-Mobile-App",
+      },
+      {
+        label: "Backend",
+        url: "https://github.com/ahmadexe/PRISM-Backend",
       },
     ],
   },

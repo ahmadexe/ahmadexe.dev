@@ -13,7 +13,8 @@ const prismDescription = `The current social landscape treats personal data like
 
 PRISM tries a different arrangement. Built on blockchain, user data is stored securely, tamper-proof, and fully user-owned. No third party can access or monetize it without traceable consent. Paired with AI, it personalizes what you see without needing to surveil you to do it. A quiet attempt at rebuilding trust in a place that spent years earning distrust.
 
-GitHub: https://github.com/ahmadexe/PRISM-Mobile-App`;
+Mobile:  https://github.com/ahmadexe/PRISM-Mobile-App
+Backend: https://github.com/ahmadexe/PRISM-Backend`;
 
 const prismChainDescription = `A novel gasless blockchain architecture, taking cues from both Bitcoin and Ethereum. Bitcoin lends the decentralization and security posture. Ethereum informs the smart-contract flexibility. Where things diverge is the fee model.
 
