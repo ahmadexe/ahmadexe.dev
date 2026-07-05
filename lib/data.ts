@@ -221,20 +221,33 @@ export type Article = {
 
 export const articles: Article[] = [
   {
-    title: "FlutterFire Push Notifications via FCM, Flutter Web",
-    blurb: "A walk through sending push notifications on Flutter for the web.",
-    url: "https://medium.com/@ahmadexe/flutterfire-push-notifications-via-fcm-flutter-web-b475f3e0a5e2",
-  },
-  {
-    title: "Concurrency in Go: Everything You Need to Know",
-    blurb:
-      "Concurrent programming the right way. The basics, and the patterns you'll actually reach for in Go.",
-    url: "https://medium.com/@ahmadexe/concurrency-in-go-everything-you-need-to-know-5319e69a9e54",
-  },
-  {
     title: "Behind the Code: Journey Building PRISM",
     blurb:
       "The architecture behind PRISM's mobile application and backend, and a bit of the story that got us there.",
     url: "https://medium.com/@ahmadexe/behind-the-code-journey-building-prism-f3bf7de0883d",
+  },
+  {
+    title: "Concurrency in Go: Everything You Need to Know",
+    blurb:
+      "Threads, concurrency, parallelism, goroutines, channels. The basics, and the patterns you'll actually reach for in Go.",
+    url: "https://medium.com/@ahmadexe/concurrency-in-go-everything-you-need-to-know-5319e69a9e54",
+  },
+  {
+    title: "Go gRPC: Understanding gRPC with Go",
+    blurb:
+      "A working guide to inter-service communication with gRPC, written in Go and paced for people building real systems.",
+    url: "https://medium.com/@ahmadexe/go-grpc-understanding-grpc-with-go-a-guide-to-inter-service-communication-ea7eb8749c60",
+  },
+  {
+    title: "The Prettiest Session Hijack I Ever Fell For",
+    blurb:
+      "A short, honest story about the day my session got hijacked in the most well-dressed way possible.",
+    url: "https://medium.com/@ahmadexe/the-prettiest-session-hijack-i-ever-fell-for-cc9d93994305",
+  },
+  {
+    title: "FlutterFire Push Notifications via FCM, Flutter Web",
+    blurb:
+      "A walk through sending push notifications on Flutter for the web — the pieces that are easy to miss the first time.",
+    url: "https://medium.com/@ahmadexe/flutterfire-push-notifications-via-fcm-flutter-web-b475f3e0a5e2",
   },
 ];
