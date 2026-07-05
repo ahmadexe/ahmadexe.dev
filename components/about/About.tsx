@@ -15,7 +15,7 @@ const stats = [
   { label: "years shipping", value: "4+" },
   { label: "projects live", value: "numerous" },
   { label: "awards", value: "5" },
-  { label: "articles", value: "3" },
+  { label: "articles", value: "5" },
 ];
 
 const stack = [

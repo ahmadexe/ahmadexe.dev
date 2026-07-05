@@ -24,10 +24,17 @@ export type Project = {
 export const projects: Project[] = [
   {
     name: "Agenix",
-    tagline: "A Flutter framework for building agentic applications.",
+    tagline: "A Dart framework for multi-agent orchestration, past the toy stage.",
     description:
-      "A Flutter and Dart framework for building agentic applications. Modular by design. You define agents, plug in an LLM like Gemini, and manage state through built-in or custom data stores such as Firebase. Each agent can be equipped with tools to perform specific actions (fetching weather, pulling news, running business logic), and multiple agents can be chained for collaborative reasoning. The system behavior lives in a simple configuration file, so setup stays customizable without turning into a mess. Open-source, and something I still tend to on my own time.",
-    tags: ["Flutter", "Dart", "LLM", "Agents", "Open Source"],
+      "Now at v4.1.2. Agenix speaks to eight LLM providers — Gemini, OpenAI, Anthropic, Groq, xAI (Grok), Cohere, Mistral, DeepSeek — behind a single adapter, so swapping a model is a config change instead of a rewrite. The orchestration layer is what turned it into a framework rather than a wrapper: chains cap out at kMaxChainDepth (5) so runaway plans terminate, cycle detection throws a ConfigException the moment an agent tries to re-enter its own chain, and duplicate tool calls inside a single turn are refused before the LLM burns tokens rediscovering the same answer. FailureMode lets a caller pick between typed exceptions and a graceful AgentMessage — the same graph can be strict in tests and forgiving in a UI. Long conversations use a rolling memoryLimit (default 10 turns) so context windows stay bounded without dropping history entirely, and AgentScope with RegistrationPolicy keeps agent namespaces isolated when more than one graph shares a process. A companion agenix_firebase package handles persistent memory when an agent needs to remember across sessions, kept out of the core so non-Firebase apps don't drag it in. Open-source, and something I still tend to on my own time.",
+    tags: [
+      "Flutter",
+      "Dart",
+      "LLM",
+      "Multi-Agent",
+      "Orchestration",
+      "Open Source",
+    ],
     accent: "matrix",
     links: [
       { label: "GitHub", url: "https://github.com/ahmadexe/agenix" },
