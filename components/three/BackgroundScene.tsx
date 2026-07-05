@@ -24,6 +24,7 @@ import {
   useProgressRef,
   useVelocityRef,
 } from "./useChapterProgress";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 /**
  * Camera choreography: waypoint-lerped position/lookAt driven by Lenis progress.
@@ -217,7 +218,7 @@ function ChapterTitle({
     const dy = camera.position.y - y;
     const dist = Math.abs(dy);
     g.visible = dist < 24;
-    const targetOpacity = Math.max(0, 1 - dist / 14) * 0.16;
+    const targetOpacity = Math.max(0, 1 - dist / 14) * 0.09;
     if (textRef.current) {
       const cur = textRef.current.fillOpacity ?? 0;
       textRef.current.fillOpacity = cur + (targetOpacity - cur) * 0.1;
@@ -271,8 +272,8 @@ function PostFX({ enabled }: { enabled: boolean }) {
   return (
     <EffectComposer>
       <Bloom
-        intensity={0.9}
-        luminanceThreshold={0.22}
+        intensity={0.55}
+        luminanceThreshold={0.32}
         luminanceSmoothing={0.9}
         mipmapBlur
       />
@@ -282,8 +283,65 @@ function PostFX({ enabled }: { enabled: boolean }) {
         radialModulation={false}
         modulationOffset={0.15}
       />
-      <Vignette eskil={false} offset={0.28} darkness={0.7} />
+      <Vignette eskil={false} offset={0.22} darkness={0.82} />
     </EffectComposer>
+  );
+}
+
+/**
+ * Pared-down scene for phones: static camera, HeroCore that fades on scroll,
+ * and lighter ambient rain/particles. No vignettes, no giant chapter titles,
+ * no camera choreography — those are the pieces that fought with content on
+ * small viewports.
+ */
+function MobileScene({
+  progressRef,
+}: {
+  progressRef: MutableRefObject<number>;
+}) {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-0">
+      <Canvas
+        camera={{ position: [0, 0.5, 7.5], fov: 55 }}
+        dpr={[1, 1.5]}
+        gl={{
+          antialias: false,
+          alpha: true,
+          powerPreference: "high-performance",
+          stencil: false,
+          depth: true,
+        }}
+        frameloop="always"
+      >
+        <color attach="background" args={["#000000"]} />
+        <fog attach="fog" args={["#000000", 14, 40]} />
+        <Suspense fallback={null}>
+          <ambientLight intensity={0.32} />
+          <pointLight position={[4, 4, 4]} intensity={0.7} color="#00ff41" />
+          <pointLight position={[-4, -3, 2]} intensity={0.45} color="#00e5ff" />
+
+          <MatrixRain count={220} spread={28} depth={18} />
+          <ParticleField count={150} radius={22} />
+
+          {/* Shrink + drop the orb so it sits below the H1 instead of over it,
+              and push it back on Z so it reads as ambient depth, not content. */}
+          <group scale={0.42} position={[0, -3.4, -3]}>
+            <HeroCore progressRef={progressRef} />
+          </group>
+
+          <EffectComposer>
+            <Bloom
+              intensity={0.4}
+              luminanceThreshold={0.38}
+              luminanceSmoothing={0.9}
+              mipmapBlur
+            />
+            <Vignette eskil={false} offset={0.2} darkness={0.85} />
+          </EffectComposer>
+          <Preload all />
+        </Suspense>
+      </Canvas>
+    </div>
   );
 }
 
@@ -292,6 +350,12 @@ export function BackgroundScene() {
   const velocityRef = useVelocityRef();
   const [dpr, setDpr] = useState<number>(1.35);
   const [fx, setFx] = useState(true);
+  const isMobile = useIsMobile();
+
+  // Pre-hydration: render nothing (the MobileBackground CSS layer covers it).
+  if (isMobile === null) return null;
+  // Phones get a pared-down scene — HeroCore + ambient rain/particles only.
+  if (isMobile) return <MobileScene progressRef={progressRef} />;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0">
@@ -323,9 +387,9 @@ export function BackgroundScene() {
           <CameraRig progressRef={progressRef} velocityRef={velocityRef} />
           <FogRig progressRef={progressRef} />
 
-          <ambientLight intensity={0.4} />
-          <pointLight position={[5, 5, 5]} intensity={1.2} color="#00ff41" />
-          <pointLight position={[-5, -5, 3]} intensity={0.8} color="#00e5ff" />
+          <ambientLight intensity={0.28} />
+          <pointLight position={[5, 5, 5]} intensity={0.85} color="#00ff41" />
+          <pointLight position={[-5, -5, 3]} intensity={0.55} color="#00e5ff" />
 
           <AmbientFollow velocityRef={velocityRef} />
 
