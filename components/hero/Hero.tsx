@@ -100,8 +100,8 @@ export function Hero() {
           className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl text-xs text-ink-dim/70"
         >
           <Telemetry label="SYSTEM" value="ONLINE" tone="matrix" />
-          <Telemetry label="MISSIONS" value="04 SHIPPED" />
-          <Telemetry label="AWARDS" value="05 CLAIMED" />
+          <Telemetry label="MISSIONS" value="10+ SHIPPED" />
+          <Telemetry label="AWARDS" value="20+ CLAIMED" />
           <Telemetry label="UPTIME" value="∞" />
         </motion.div>
       </div>
