@@ -9,7 +9,7 @@ export function SectionHeader({
   title,
   subtitle,
 }: {
-  index: string;
+  index?: string;
   eyebrow: string;
   title: string;
   subtitle?: string;
@@ -25,7 +25,7 @@ export function SectionHeader({
         transition={{ duration: 0.6 }}
         className="flex items-center gap-4 mb-6 text-matrix text-xs uppercase tracking-[0.4em]"
       >
-        <span className="opacity-60">{index}</span>
+        {index && <span className="opacity-60">{index}</span>}
         <span className="h-px w-16 bg-matrix/40" />
         <span className="section-eyebrow">{eyebrow}</span>
       </motion.div>

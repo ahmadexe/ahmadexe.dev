@@ -11,6 +11,7 @@ import { KonamiOverride } from "@/components/layout/KonamiOverride";
 import { SceneScrim } from "@/components/layout/SceneScrim";
 import { Hero } from "@/components/hero/Hero";
 import { Terminal } from "@/components/terminal/Terminal";
+import { QuakeTerminal } from "@/components/terminal/QuakeTerminal";
 import { About } from "@/components/about/About";
 import { Projects } from "@/components/projects/Projects";
 import { Experience } from "@/components/experience/Experience";
@@ -24,15 +25,26 @@ const BackgroundScene = dynamic(
   { ssr: false }
 );
 
+const Singularity = dynamic(
+  () =>
+    import("@/components/three/Singularity").then((m) => m.Singularity),
+  { ssr: false }
+);
+
 export default function Home() {
   return (
     <SmoothScroll>
       <BootOverlay />
       <KonamiOverride />
       <Cursor />
-      <GridOverlay />
-      <BackgroundScene />
-      <SceneScrim />
+      {/* Ambient scenes dim while the terminal is on stage so the CRT reads
+          as the room's only light source. See .stage-terminal .scene-ambient
+          in globals.css. */}
+      <div className="scene-ambient">
+        <GridOverlay />
+        <BackgroundScene />
+        <SceneScrim />
+      </div>
       <Nav />
       <main className="relative z-10">
         <Hero />
@@ -45,6 +57,8 @@ export default function Home() {
         <Articles />
       </main>
       <Footer />
+      <QuakeTerminal />
+      <Singularity />
     </SmoothScroll>
   );
 }

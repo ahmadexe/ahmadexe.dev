@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { ContactPanel } from "./ContactPanel";
+import { useShell } from "@/components/terminal/shellStore";
 
 const links = [
   { href: "#home", label: "home", index: "01" },
@@ -17,6 +18,8 @@ const links = [
 ];
 
 export function Nav() {
+  const shellState = useShell();
+  const lastCmd = shellState.history[shellState.history.length - 1] ?? "";
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("home");
   const [now, setNow] = useState("");
@@ -85,6 +88,7 @@ export function Nav() {
             {links.map((l) => {
               const key = l.href.slice(1);
               const isActive = active === key;
+              const isTerminal = key === "terminal";
               return (
                 <Link
                   key={l.href}
@@ -92,15 +96,32 @@ export function Nav() {
                   data-cursor="hover"
                   className={clsx(
                     "group px-2 py-2 flex items-center gap-1.5 transition-colors whitespace-nowrap",
+                    isTerminal
+                      ? "font-mono"
+                      : "",
                     isActive
                       ? "text-matrix"
+                      : isTerminal
+                      ? "text-matrix/80 hover:text-matrix"
                       : "text-ink-dim/60 hover:text-matrix-soft"
                   )}
                 >
-                  <span className="opacity-40 xl:inline hidden">{l.index}</span>
-                  <span className="font-bold uppercase tracking-widest">
-                    {l.label}
-                  </span>
+                  {isTerminal ? (
+                    <>
+                      <span className="text-matrix/50">~$</span>
+                      <span className="tracking-wide">{l.label}</span>
+                      <span className="caret-mini" />
+                    </>
+                  ) : (
+                    <>
+                      <span className="opacity-40 xl:inline hidden">
+                        {l.index}
+                      </span>
+                      <span className="font-bold uppercase tracking-widest">
+                        {l.label}
+                      </span>
+                    </>
+                  )}
                   {isActive && (
                     <span className="w-1 h-1 bg-matrix rounded-full shadow-[0_0_8px_var(--matrix)]" />
                   )}
@@ -124,11 +145,19 @@ export function Nav() {
               </span>
             </button>
 
-            <div className="hidden 2xl:flex items-center gap-3 text-ink-dim/60 whitespace-nowrap">
-              <span className="w-1.5 h-1.5 rounded-full bg-matrix animate-pulse" />
-              <span className="font-bold tracking-widest">ONLINE</span>
-              <span className="opacity-40">|</span>
-              <span>{now}</span>
+            {/* Status area doubles as a live shell echo — when the user runs
+                a command in either console, its text scrolls through here so
+                the shell reads as *the* running system, not a section demo. */}
+            <div className="hidden 2xl:flex items-center gap-2 text-ink-dim/60 whitespace-nowrap font-mono max-w-[280px] overflow-hidden">
+              <span className="w-1.5 h-1.5 rounded-full bg-matrix animate-pulse shrink-0" />
+              <span className="text-matrix/70 shrink-0">~$</span>
+              {lastCmd ? (
+                <span className="text-ink/80 truncate">{lastCmd}</span>
+              ) : (
+                <span className="text-ink-dim/40 truncate">
+                  awaiting input · {now}
+                </span>
+              )}
             </div>
 
             <button

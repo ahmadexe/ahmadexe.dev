@@ -399,3 +399,180 @@ body {
   width: 16px;
   height: 16px;
 }
+
+/* Singularity styles removed: the world-collapse animation on #sing-root was
+   fighting the live WebGL BackgroundScene under it (compositor had to sync a
+   transformed layer with a canvas redrawing every frame), which caused
+   residual stutter. The singularity now lives entirely in an independent
+   overlay layer — see components/three/Singularity.tsx. */
+
+/* ---------- terminal stage ----------
+ * When the CRT section is in view, we dim every ambient layer (background
+ * 3D scene, grid, scrim) so the room around the terminal darkens. The
+ * terminal doesn't move — the world just recedes. Opacity is GPU-cheap. */
+.scene-ambient {
+  transition: opacity 700ms ease;
+}
+.stage-terminal .scene-ambient {
+  opacity: 0.12;
+}
+
+/* ---------- CRT cabinet ----------
+ * A real object: thicker bezel, brushed dark-metal gradient, corner screws,
+ * an inner rim highlight, and a status LED. */
+
+.cabinet {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 22%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, transparent 30%),
+    linear-gradient(135deg, #1c2822 0%, #0a1210 40%, #040808 100%);
+  border: 1px solid rgba(0, 255, 65, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(0, 255, 65, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -2px 12px rgba(0, 0, 0, 0.7),
+    0 30px 80px rgba(0, 0, 0, 0.65),
+    0 0 50px rgba(0, 255, 65, 0.18),
+    0 0 140px rgba(0, 255, 65, 0.1);
+}
+
+/* brushed-metal streaks */
+.cabinet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.018) 0 1px,
+    transparent 1px 3px
+  );
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: overlay;
+}
+
+/* When a command runs from outside the CRT (quake), the cabinet pings so
+   people know the shell is one thing. .cabinet-ping just brightens the
+   green rim briefly. */
+@keyframes cabinet-ping {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 65, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -2px 12px rgba(0, 0, 0, 0.7),
+      0 30px 80px rgba(0, 0, 0, 0.65),
+      0 0 50px rgba(0, 255, 65, 0.18),
+      0 0 140px rgba(0, 255, 65, 0.1);
+  }
+  25% {
+    box-shadow:
+      0 0 0 2px rgba(0, 255, 65, 1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -2px 12px rgba(0, 0, 0, 0.7),
+      0 30px 80px rgba(0, 0, 0, 0.65),
+      0 0 90px rgba(0, 255, 65, 0.55),
+      0 0 200px rgba(0, 255, 65, 0.35);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 65, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -2px 12px rgba(0, 0, 0, 0.7),
+      0 30px 80px rgba(0, 0, 0, 0.65),
+      0 0 50px rgba(0, 255, 65, 0.18),
+      0 0 140px rgba(0, 255, 65, 0.1);
+  }
+}
+.cabinet-ping {
+  animation: cabinet-ping 900ms ease-out;
+}
+
+.screw {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 30%, #6a7370 0%, #2a3230 45%, #0a0e0d 100%);
+  box-shadow:
+    inset 0 0 3px rgba(0, 0, 0, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+  z-index: 2;
+}
+.screw::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-top: 1.5px solid rgba(0, 0, 0, 0.75);
+  transform: rotate(38deg);
+  border-radius: 1px;
+}
+
+.screw-tl { top: 10px; left: 10px; }
+.screw-tr { top: 10px; right: 10px; }
+.screw-bl { bottom: 10px; left: 10px; }
+.screw-br { bottom: 10px; right: 10px; }
+
+/* Pedestal — trapezoidal stem + wider base plate */
+.pedestal-stem {
+  background: linear-gradient(180deg, #0e1a15 0%, #060c0a 60%, #030605 100%);
+  clip-path: polygon(28% 0%, 72% 0%, 100% 100%, 0% 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.pedestal-base {
+  background:
+    linear-gradient(180deg, #14201a 0%, #08100c 60%, #020504 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(0, 255, 65, 0.15),
+    0 10px 30px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(0, 255, 65, 0.08);
+  border-top: 1px solid rgba(0, 255, 65, 0.2);
+}
+.pedestal-base::after {
+  content: "";
+  position: absolute;
+  inset-inline: 12px;
+  bottom: -2px;
+  height: 1px;
+  background: rgba(0, 255, 65, 0.35);
+  filter: blur(2px);
+}
+
+/* Status LED — a small green dot that pulses. */
+@keyframes led-pulse {
+  0%, 100% {
+    box-shadow: 0 0 4px rgba(0, 255, 65, 0.55), 0 0 12px rgba(0, 255, 65, 0.4);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.9), 0 0 22px rgba(0, 255, 65, 0.6);
+    opacity: 0.95;
+  }
+}
+.led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #b4ffcf, #00ff41 60%, #007a20);
+  animation: led-pulse 2.2s ease-in-out infinite;
+}
+
+/* Blinking caret used inside the nav's shell-prompt-styled terminal link so
+   the link reads as a *live* prompt, not just decorative text. */
+.caret-mini {
+  display: inline-block;
+  width: 6px;
+  height: 12px;
+  background: var(--matrix);
+  box-shadow: 0 0 6px var(--matrix);
+  animation: caret-mini-blink 1.05s steps(2, end) infinite;
+  vertical-align: -1px;
+  margin-left: 2px;
+}
+@keyframes caret-mini-blink {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+
