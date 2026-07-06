@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { FS } from "./fileSystem";
-import { identity } from "@/lib/data";
+import { identity, projects } from "@/lib/data";
+import { site, THEMES, type Theme } from "@/components/site/siteStore";
 
 export type ShellEntry =
   | { type: "prompt"; path: string; input: string }
@@ -10,8 +11,9 @@ export type ShellEntry =
   | { type: "banner"; text: string }
   | { type: "corrupt"; text: string };
 
-const banner = `Welcome to termolio.sh, the interactive shell.
-Type 'help' for commands, or 'about' for who I am.
+const banner = `Welcome to termolio.sh — this shell runs the site.
+Try: theme amber · grep flutter · open awards · sudo unlock
+Type 'help' for the full list, or 'about' for who I am.
 `;
 
 const helpText = `Available commands:
@@ -25,6 +27,12 @@ const helpText = `Available commands:
   socials              show my links
   banner               reprint the intro
   exit                 (does nothing, you're stuck with me)
+
+  -- the shell owns the site --
+  theme [name]         switch site theme (matrix, amber, mono, synth)
+  grep <query>         filter projects in place, live
+  open <target>        jump to a section or project
+  unlock, sudo unlock  request root (there's something you haven't seen)
 
 warning: some incantations open holes in reality. type at your own risk.`;
 
@@ -95,6 +103,37 @@ function isDangerous(cmd: string) {
   return DANGER_PATTERNS.some((r) => r.test(cmd));
 }
 
+const SECTION_IDS = [
+  "home",
+  "terminal",
+  "about",
+  "projects",
+  "experience",
+  "awards",
+  "speaking",
+  "articles",
+];
+
+function scrollToId(id: string) {
+  if (typeof document === "undefined") return false;
+  const el = document.getElementById(id);
+  if (!el) return false;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  return true;
+}
+
+function doUnlock(out: (t: string) => void) {
+  if (site.getState().unlocked) {
+    out("root: already granted. you're in.");
+    return;
+  }
+  site.unlock();
+  out(
+    `root granted. welcome to the machine, ${identity.handle}.\n` +
+      `// the glow just got a little louder. everything is a little more true.`
+  );
+}
+
 function longestCommonPrefix(strs: string[]): string {
   if (strs.length === 0) return "";
   let prefix = strs[0];
@@ -127,6 +166,7 @@ export const shell = {
   resetAll() {
     const fresh = initialState();
     state = fresh;
+    site.reset();
     emit();
   },
 
@@ -208,11 +248,93 @@ export const shell = {
       case "logout":
         out("nice try. this shell doesn't quit.");
         break;
-      case "sudo":
-        out("nice try. sudo is not installed on this system.");
+      case "sudo": {
+        const sub = (rest[0] ?? "").toLowerCase();
+        if (sub === "unlock" || sub === "root" || sub === "-s") {
+          doUnlock(out);
+        } else {
+          out("nice try. sudo is not installed on this system.");
+        }
         break;
+      }
       case "rm":
         out("permission denied. this is a read-only shell.");
+        break;
+
+      case "theme": {
+        const t = arg.trim().toLowerCase();
+        if (!t) {
+          out(
+            `current theme: ${site.getState().theme}\n` +
+              `available: ${THEMES.join(", ")}\n` +
+              `usage: theme <name>`
+          );
+          break;
+        }
+        if (!THEMES.includes(t as Theme)) {
+          out(
+            `unknown theme "${t}". try one of: ${THEMES.join(", ")}`
+          );
+          break;
+        }
+        site.setTheme(t as Theme);
+        out(`theme → ${t}. the site is speaking a different color now.`);
+        break;
+      }
+
+      case "grep": {
+        const q = arg.trim();
+        site.setProjectFilter(q);
+        if (q) {
+          scrollToId("projects");
+          out(`filtering projects by "${q}". clear with: grep`);
+        } else {
+          out("filter cleared.");
+        }
+        break;
+      }
+
+      case "open":
+      case "goto":
+      case "jump": {
+        const target = arg.trim().toLowerCase();
+        if (!target) {
+          out(
+            `usage: open <section|project>\n` +
+              `sections: ${SECTION_IDS.join(", ")}`
+          );
+          break;
+        }
+        if (SECTION_IDS.includes(target)) {
+          if (scrollToId(target)) out(`opening /${target} ...`);
+          else out(`open: /${target} not mounted right now.`);
+          break;
+        }
+        const proj = projects.find((p) =>
+          p.name.toLowerCase().includes(target)
+        );
+        if (proj) {
+          site.setProjectFilter(proj.name);
+          scrollToId("projects");
+          out(`opening ${proj.name} ...`);
+          break;
+        }
+        out(`open: nothing matches "${target}".`);
+        break;
+      }
+
+      case "unlock":
+      case "root":
+        doUnlock(out);
+        break;
+
+      case "theme?":
+      case "themes":
+        out(
+          `available themes: ${THEMES.join(", ")}\n` +
+            `current: ${site.getState().theme}\n` +
+            `usage: theme <name>`
+        );
         break;
       default:
         out(
@@ -230,19 +352,25 @@ export const shell = {
     const cmds = [
       "help", "clear", "whoami", "about", "ls", "pwd", "cd", "cat",
       "socials", "banner", "exit",
+      "theme", "grep", "open", "unlock",
     ];
 
     const fs = state.fs;
+    const headLower = head.toLowerCase();
     const pool = isCmd
       ? cmds
-      : head.toLowerCase() === "cd"
+      : headLower === "cd"
       ? fs.cwd.kind === "dir"
         ? fs.cwd.children.filter((c) => c.kind === "dir").map((c) => c.name)
         : []
-      : head.toLowerCase() === "cat"
+      : headLower === "cat"
       ? fs.cwd.kind === "dir"
         ? fs.cwd.children.filter((c) => c.kind === "file").map((c) => c.name)
         : []
+      : headLower === "theme"
+      ? [...THEMES]
+      : headLower === "open" || headLower === "goto" || headLower === "jump"
+      ? [...SECTION_IDS, ...projects.map((p) => p.name.toLowerCase())]
       : fs.cwd.kind === "dir"
       ? fs.cwd.children.map((c) => c.name)
       : [];

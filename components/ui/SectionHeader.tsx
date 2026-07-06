@@ -6,11 +6,16 @@ import { useRef } from "react";
 export function SectionHeader({
   index,
   eyebrow,
+  crumb,
   title,
   subtitle,
 }: {
   index?: string;
   eyebrow: string;
+  // Tiny shell-prompt breadcrumb rendered above the eyebrow, e.g.
+  // "~/projects $ ls" — makes every section read as a page of the shell
+  // rather than a self-contained block.
+  crumb?: string;
   title: string;
   subtitle?: string;
 }) {
@@ -19,6 +24,18 @@ export function SectionHeader({
 
   return (
     <div ref={ref} className="mb-16 md:mb-24">
+      {crumb && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          className="mb-3 font-mono text-[11px] text-matrix/70"
+          aria-hidden
+        >
+          <span className="text-matrix/40">$</span>{" "}
+          <span className="text-matrix/80">{crumb}</span>
+        </motion.div>
+      )}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}

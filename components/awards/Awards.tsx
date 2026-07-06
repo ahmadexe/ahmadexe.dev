@@ -13,6 +13,7 @@ export function Awards() {
         <SectionHeader
           index="06"
           eyebrow="./wins"
+          crumb="~/awards $ ls -la"
           title="The occasional win."
           subtitle="Trophies collected along the way. A few judges, and a few first prizes."
         />

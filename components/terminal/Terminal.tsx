@@ -213,6 +213,7 @@ export function Terminal() {
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10 w-full">
         <SectionHeader
           eyebrow="the engine, on display"
+          crumb="~ $ tty  # /dev/portfolio"
           title="This whole site is one terminal."
           subtitle="Every section — projects, awards, articles — is a file in this shell. Type anywhere to drop the console; this CRT is the same shell, on its own stage."
         />
@@ -403,9 +404,10 @@ export function Terminal() {
               <div>PID 0x0AE1 · MEM 42% · CPU 0.3%</div>
               <div className="flex items-center gap-4">
                 <span className="hidden md:inline">
-                  hint: try <span className="text-matrix">ls</span>,{" "}
-                  <span className="text-matrix">cd projects</span>,{" "}
-                  <span className="text-matrix">cat README.md</span>
+                  hint: <span className="text-matrix">theme amber</span> ·{" "}
+                  <span className="text-matrix">grep flutter</span> ·{" "}
+                  <span className="text-matrix">open awards</span> ·{" "}
+                  <span className="text-matrix">sudo unlock</span>
                 </span>
                 <span>UTF-8</span>
               </div>

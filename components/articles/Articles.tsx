@@ -12,6 +12,7 @@ export function Articles() {
         <SectionHeader
           index="08"
           eyebrow="./writing"
+          crumb="~/articles $ cat *.md | less"
           title="Notes, in longer form."
           subtitle="Occasional deep dives on the things I build."
         />

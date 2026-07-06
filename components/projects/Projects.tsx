@@ -5,6 +5,7 @@ import { useRef } from "react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { TiltCard } from "@/components/ui/TiltCard";
 import { projects, type Project } from "@/lib/data";
+import { site, useSite } from "@/components/site/siteStore";
 import clsx from "clsx";
 
 const accentMap = {
@@ -128,21 +129,65 @@ function ProjectCard({ p, index }: { p: Project; index: number }) {
 }
 
 export function Projects() {
+  const { projectFilter } = useSite();
+  const q = projectFilter.trim().toLowerCase();
+  const filtered = q
+    ? projects.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.tagline.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.tags.some((t) => t.toLowerCase().includes(q))
+      )
+    : projects;
+
   return (
     <section id="projects" className="relative py-32 md:py-40">
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 relative z-10">
         <SectionHeader
           index="04"
           eyebrow="./work"
+          crumb='~/projects $ ls'
           title="A few things worth naming."
           subtitle="Selected projects. Frameworks, chains, and the occasional strange interface."
         />
 
-        <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-          {projects.map((p, i) => (
-            <ProjectCard key={p.name} p={p} index={i} />
-          ))}
-        </div>
+        {q && (
+          <div className="mb-8 flex flex-wrap items-center gap-3 font-mono text-xs">
+            <span className="text-matrix">
+              ~/projects $ grep -i &quot;{projectFilter}&quot;
+            </span>
+            <span className="text-ink-dim/60">
+              → {filtered.length} match{filtered.length === 1 ? "" : "es"}
+            </span>
+            <button
+              onClick={() => site.setProjectFilter("")}
+              data-cursor="hover"
+              className="text-ink-dim/70 hover:text-matrix underline decoration-dotted"
+            >
+              clear
+            </button>
+          </div>
+        )}
+
+        {filtered.length === 0 ? (
+          <div className="font-mono text-sm text-ink-dim/60 border border-matrix/20 p-8 bg-black/40">
+            <span className="text-danger">grep:</span> no projects match
+            &quot;{projectFilter}&quot;.{" "}
+            <button
+              onClick={() => site.setProjectFilter("")}
+              className="text-matrix underline"
+            >
+              clear filter
+            </button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+            {filtered.map((p, i) => (
+              <ProjectCard key={p.name} p={p} index={i} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

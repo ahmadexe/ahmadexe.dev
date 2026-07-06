@@ -57,6 +57,7 @@ export function About() {
         <SectionHeader
           index="03"
           eyebrow="./whoami"
+          crumb="~/about $ cat me.md"
           title="A note on the person at the keyboard."
           subtitle="The short version of who I am, what I care about, and how I got here."
         />

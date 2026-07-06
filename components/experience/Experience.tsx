@@ -12,6 +12,7 @@ export function Experience() {
         <SectionHeader
           index="05"
           eyebrow="./history"
+          crumb="~/experience $ git log --oneline"
           title="Where I've done the work."
           subtitle="Places, in reverse chronological order."
         />

@@ -47,7 +47,21 @@ export const projects: Project[] = [
     tagline: "A social network that gives users their data back.",
     description:
       "The current social landscape treats personal data like a commodity. Users don't own it, don't see how it moves, and don't share in the value it creates. PRISM tries a different arrangement. Built on blockchain, user data is stored securely, tamper-proof, and fully user-owned. No third party can access or monetize it without traceable consent. Paired with AI, it personalizes what you see without needing to surveil you to do it. A quiet attempt at rebuilding trust in a place that spent years earning distrust.",
-    tags: ["Blockchain", "AI", "Mobile", "Privacy", "Go", "Gin"],
+    tags: [
+      "Blockchain",
+      "AI",
+      "Mobile",
+      "Privacy",
+      "Go",
+      "Gin",
+      "Python",
+      "Redis",
+      "Kafka",
+      "MongoDB",
+      "Firebase",
+      "AWS",
+      "GCP",
+    ],
     accent: "cyan",
     links: [
       {

@@ -12,6 +12,7 @@ export function Speaking() {
         <SectionHeader
           index="07"
           eyebrow="./mic"
+          crumb="~/speaking $ ls -t"
           title="Rooms I've spoken in."
           subtitle="Talks, meetups, and the odd bootcamp. Mostly Flutter, occasionally something else."
         />
