@@ -110,10 +110,6 @@ export function Footer() {
                 {identity.location}
               </li>
               <li>
-                <span className="text-matrix">$</span> stack: Next.js · R3F ·
-                GSAP
-              </li>
-              <li>
                 <span className="text-matrix">$</span> status:{" "}
                 <span className="text-matrix">accepting_signals</span>
               </li>

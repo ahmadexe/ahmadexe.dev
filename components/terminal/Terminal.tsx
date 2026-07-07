@@ -45,6 +45,45 @@ export function Terminal() {
 
   const inView = useInView(sectionRef, { margin: "-20%" });
   const [ping, setPing] = useState(false);
+  const [memPct, setMemPct] = useState(0);
+  const [cpuPct, setCpuPct] = useState(0.3);
+
+  // Blur CRT input when it scrolls off-screen so focus doesn't trap keystrokes
+  // that should open the Quake terminal instead.
+  useEffect(() => {
+    if (!inView) inputRef.current?.blur();
+  }, [inView]);
+
+  // Page-scroll → MEM%; scroll activity spikes CPU% then decays.
+  const { scrollYProgress: pageProgress } = useScroll();
+  useEffect(() => {
+    return pageProgress.on("change", (v) => setMemPct(Math.round(v * 100)));
+  }, [pageProgress]);
+
+  useEffect(() => {
+    let decayTimer: ReturnType<typeof setTimeout>;
+    let decayInterval: ReturnType<typeof setInterval>;
+    const onScroll = () => {
+      setCpuPct((p) => Math.min(98, p + Math.random() * 18 + 8));
+      clearTimeout(decayTimer);
+      clearInterval(decayInterval);
+      decayTimer = setTimeout(() => {
+        decayInterval = setInterval(() => {
+          setCpuPct((p) => {
+            const next = +(p - 3).toFixed(1);
+            if (next <= 0.3) { clearInterval(decayInterval); return 0.3; }
+            return next;
+          });
+        }, 80);
+      }, 250);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(decayTimer);
+      clearInterval(decayInterval);
+    };
+  }, []);
 
   // Toggle a global .stage-terminal class on <html> whenever the CRT is
   // centered enough to be "on stage". CSS then dims .scene-ambient so the
@@ -401,7 +440,7 @@ export function Terminal() {
               className="mt-2 px-2 flex items-center justify-between text-[10px] text-ink-dim/40 uppercase tracking-widest"
               style={{ transform: "translateZ(28px)" }}
             >
-              <div>PID 0x0AE1 · MEM 42% · CPU 0.3%</div>
+              <div>PID 0x0AE1 · MEM {memPct}% · CPU {cpuPct.toFixed(1)}%</div>
               <div className="flex items-center gap-4">
                 <span className="hidden md:inline">
                   hint: <span className="text-matrix">theme amber</span> ·{" "}
