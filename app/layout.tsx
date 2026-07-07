@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { SEO, SITE_URL } from "@/lib/seo";
-import { identity } from "@/lib/data";
+import { identity, projects, articles, awards, experiences } from "@/lib/data";
 
 const jet = JetBrains_Mono({
   variable: "--font-jet",
@@ -132,13 +132,52 @@ const jsonLd = {
         "System Design",
         "Open Source Software",
       ],
+      knowsLanguage: ["English", "Urdu"],
+      nationality: { "@type": "Country", name: "Pakistan" },
+      worksFor: {
+        "@type": "Organization",
+        name: experiences.find((e) => e.current)?.company ?? "Tensor Labs",
+      },
+      award: awards.map((a) => `${a.title}${a.place ? `, ${a.place}` : ""} (${a.year})`),
       hasCredential: [
         {
           "@type": "EducationalOccupationalCredential",
           name: "1st Prize, ICT Innovation Global Finals",
-          description: "Awarded at the 2025 ICT Innovation Global Finals in Shenzhen, China for PRISM and Agenix.",
+          description:
+            "Awarded at the 2025 ICT Innovation Global Finals in Shenzhen, China for PRISM and Agenix.",
         },
       ],
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${SITE_URL}/#projects`,
+      name: "Projects by Muhammad Ahmad",
+      itemListElement: projects.map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "CreativeWork",
+          name: p.name,
+          headline: p.tagline,
+          description: p.description,
+          keywords: p.tags.join(", "),
+          author: { "@id": `${SITE_URL}/#person` },
+          ...(p.links[0] ? { url: p.links[0].url } : {}),
+        },
+      })),
+    },
+    {
+      "@type": "Blog",
+      "@id": `${SITE_URL}/#writing`,
+      name: "Writing by Muhammad Ahmad",
+      author: { "@id": `${SITE_URL}/#person` },
+      blogPost: articles.map((a) => ({
+        "@type": "BlogPosting",
+        headline: a.title,
+        abstract: a.blurb,
+        url: a.url,
+        author: { "@id": `${SITE_URL}/#person` },
+      })),
     },
     {
       "@type": "WebSite",

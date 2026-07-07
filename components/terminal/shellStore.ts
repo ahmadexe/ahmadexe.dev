@@ -2,8 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 import { FS } from "./fileSystem";
-import { identity, projects } from "@/lib/data";
+import { identity, projects, awards } from "@/lib/data";
 import { site, THEMES, type Theme } from "@/components/site/siteStore";
+import { fx } from "@/components/site/fxStore";
 
 export type ShellEntry =
   | { type: "prompt"; path: string; input: string }
@@ -12,7 +13,7 @@ export type ShellEntry =
   | { type: "corrupt"; text: string };
 
 const banner = `Welcome to termolio.sh — this shell runs the site.
-Try: theme amber · grep flutter · open awards · sudo unlock
+Try: hack · ascii · matrix · theme amber · sudo unlock
 Type 'help' for the full list, or 'about' for who I am.
 `;
 
@@ -20,6 +21,7 @@ const helpText = `Available commands:
   help, h, cmds        show this help
   clear, cls           clear the screen
   whoami, about        who is ahmadexe
+  neofetch             system info, properly dressed
   ls                   list current directory
   pwd, cwd             print working directory
   cd <path>            change directory
@@ -33,6 +35,13 @@ const helpText = `Available commands:
   grep <query>         filter projects in place, live
   open <target>        jump to a section or project
   unlock, sudo unlock  request root (there's something you haven't seen)
+
+  -- the shell owns reality --
+  ascii [off]          re-render the entire 3D world as ASCII
+  wireframe [off]      strip the world down to its wires
+  matrix [off]         let the rain fall over everything
+  glitch               tear the frame, briefly
+  hack [target]        breach the mainframe (cinematic, allegedly illegal)
 
 warning: some incantations open holes in reality. type at your own risk.`;
 
@@ -167,6 +176,7 @@ export const shell = {
     const fresh = initialState();
     state = fresh;
     site.reset();
+    fx.reset();
     emit();
   },
 
@@ -278,6 +288,7 @@ export const shell = {
           break;
         }
         site.setTheme(t as Theme);
+        fx.burst(500);
         out(`theme → ${t}. the site is speaking a different color now.`);
         break;
       }
@@ -336,6 +347,94 @@ export const shell = {
             `usage: theme <name>`
         );
         break;
+
+      case "neofetch":
+      case "fetch":
+      case "sysinfo": {
+        const s = site.getState();
+        const f = fx.getState();
+        const modes =
+          [
+            f.ascii && "ascii",
+            f.wireframe && "wireframe",
+            f.rain && "rain",
+            s.unlocked && "root",
+          ]
+            .filter(Boolean)
+            .join("+") || "none";
+        out(
+          `        ▄▄▄▄▄▄▄▄▄▄▄        ${identity.handle}@termolio
+      ▄█████████████▄      ───────────────────
+     ███▀▀▀▀▀▀▀▀▀▀███      OS        TERMOLIO v2.0 (portfolio.sys)
+    ███  ▄▄▄  ▄▄▄  ███     Host      ${identity.fullName}
+    ███  ███  ███  ███     Kernel    reality-6.6.6-custom
+    ███   ▀    ▀   ███     Shell     termolio.sh
+     ███▄  ▄▄▄▄  ▄███      Theme     ${s.theme}
+      ▀████████████▀       Modes     ${modes}
+        ▀▀▀▀▀▀▀▀▀▀         Projects  ${projects.length} mounted
+                           Awards    ${awards.length} claimed
+                           Stack     Go · Flutter · Agents · Chains
+                           Uptime    ∞ (never sleeps, only ships)`
+        );
+        break;
+      }
+
+      case "ascii": {
+        const off = arg.trim().toLowerCase() === "off";
+        const on = off ? false : !fx.getState().ascii;
+        fx.setAscii(on);
+        out(
+          on
+            ? "re-rendering reality as text ... done.\n// everything you see is now characters. it always was."
+            : "ascii mode off. photons restored."
+        );
+        break;
+      }
+
+      case "wireframe":
+      case "wires": {
+        const off = arg.trim().toLowerCase() === "off";
+        const on = off ? false : !fx.getState().wireframe;
+        fx.setWireframe(on);
+        out(
+          on
+            ? "stripping surfaces ... world reduced to its wires."
+            : "surfaces restored. the wires are still under there."
+        );
+        break;
+      }
+
+      case "matrix":
+      case "rain": {
+        const off = arg.trim().toLowerCase() === "off";
+        const on = off ? false : !fx.getState().rain;
+        fx.setRain(on);
+        out(
+          on
+            ? "there is no spoon. rain engaged — type 'matrix off' to wake up."
+            : "rain stopped. welcome back to the desert of the real."
+        );
+        break;
+      }
+
+      case "glitch":
+        fx.burst(900);
+        out("frame integrity compromised ... recovered. mostly.");
+        break;
+
+      case "hack":
+      case "breach":
+      case "pwn": {
+        const target = arg.trim() || "the-mainframe";
+        out(`initializing breach protocol against ${target} ...`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("termolio:hack", { detail: { target } })
+          );
+        }
+        break;
+      }
+
       default:
         out(
           `termolio: command not found: ${head}. Try 'help' for the list of commands.`
@@ -350,9 +449,10 @@ export const shell = {
     const isCmd = parts.length === 1;
 
     const cmds = [
-      "help", "clear", "whoami", "about", "ls", "pwd", "cd", "cat",
-      "socials", "banner", "exit",
+      "help", "clear", "whoami", "about", "neofetch", "ls", "pwd", "cd",
+      "cat", "socials", "banner", "exit",
       "theme", "grep", "open", "unlock",
+      "ascii", "wireframe", "matrix", "glitch", "hack",
     ];
 
     const fs = state.fs;

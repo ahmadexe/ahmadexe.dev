@@ -54,6 +54,7 @@ export function Hero() {
                   "initializing portfolio.sys ... loading...",
                   identity.tagline,
                   "agentic AI · blockchain systems · dev tools",
+                  "backend engineering · mobile app development",
                 ]}
                 loop
                 speed={45}

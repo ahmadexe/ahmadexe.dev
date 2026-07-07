@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
+import { ScrambleText } from "@/components/ui/ScrambleText";
 
 export function SectionHeader({
   index,
@@ -53,7 +54,7 @@ export function SectionHeader({
         transition={{ duration: 0.8, delay: 0.1 }}
         className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-ink glow-matrix leading-[1.05]"
       >
-        {title}
+        <ScrambleText text={title} charDelay={26} />
       </motion.h2>
 
       {subtitle && (

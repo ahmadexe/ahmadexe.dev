@@ -9,6 +9,10 @@ import { Cursor } from "@/components/layout/Cursor";
 import { BootOverlay } from "@/components/layout/BootOverlay";
 import { KonamiOverride } from "@/components/layout/KonamiOverride";
 import { SceneScrim } from "@/components/layout/SceneScrim";
+import { HackOverlay } from "@/components/layout/HackOverlay";
+import { RainOverlay } from "@/components/layout/RainOverlay";
+import { ChapterHUD } from "@/components/layout/ChapterHUD";
+import { SoundToggle } from "@/components/audio/SoundToggle";
 import { Hero } from "@/components/hero/Hero";
 import { Terminal } from "@/components/terminal/Terminal";
 import { QuakeTerminal } from "@/components/terminal/QuakeTerminal";
@@ -57,7 +61,11 @@ export default function Home() {
         <Articles />
       </main>
       <Footer />
+      <ChapterHUD />
+      <SoundToggle />
+      <RainOverlay />
       <QuakeTerminal />
+      <HackOverlay />
       <Singularity />
     </SmoothScroll>
   );

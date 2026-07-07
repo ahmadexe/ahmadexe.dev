@@ -200,6 +200,9 @@ export function Terminal() {
   };
 
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key.length === 1 || e.key === "Enter" || e.key === "Backspace") {
+      window.dispatchEvent(new CustomEvent("termolio:keytick"));
+    }
     if (e.key === "Enter") {
       run(input);
       setInput("");
@@ -443,9 +446,10 @@ export function Terminal() {
               <div>PID 0x0AE1 · MEM {memPct}% · CPU {cpuPct.toFixed(1)}%</div>
               <div className="flex items-center gap-4">
                 <span className="hidden md:inline">
-                  hint: <span className="text-matrix">theme amber</span> ·{" "}
-                  <span className="text-matrix">grep flutter</span> ·{" "}
-                  <span className="text-matrix">open awards</span> ·{" "}
+                  hint: <span className="text-matrix">hack</span> ·{" "}
+                  <span className="text-matrix">ascii</span> ·{" "}
+                  <span className="text-matrix">matrix</span> ·{" "}
+                  <span className="text-matrix">theme amber</span> ·{" "}
                   <span className="text-matrix">sudo unlock</span>
                 </span>
                 <span>UTF-8</span>

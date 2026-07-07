@@ -142,6 +142,9 @@ export function QuakeTerminal() {
   }, [state.entries, open]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key.length === 1 || e.key === "Enter" || e.key === "Backspace") {
+      window.dispatchEvent(new CustomEvent("termolio:keytick"));
+    }
     if (e.key === "Enter") {
       shell.run(input);
       setInput("");

@@ -1,23 +1,28 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { PerformanceMonitor, Preload, Text } from "@react-three/drei";
+import { PerformanceMonitor, Preload } from "@react-three/drei";
 import {
   EffectComposer,
   Bloom,
   ChromaticAberration,
   Vignette,
+  ASCII,
+  Glitch,
 } from "@react-three/postprocessing";
-import { BlendFunction } from "postprocessing";
-import { MutableRefObject, Suspense, useMemo, useRef, useState } from "react";
+import { BlendFunction, GlitchMode } from "postprocessing";
+import {
+  MutableRefObject,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as THREE from "three";
 import { MatrixRain } from "./MatrixRain";
 import { ParticleField } from "./ParticleField";
-import { HeroCore } from "./HeroCore";
-import { TerminalMonolith } from "./vignettes/TerminalMonolith";
-import { ProjectHoloArc } from "./vignettes/ProjectHoloArc";
-import { AwardConstellation } from "./vignettes/AwardConstellation";
-import { PaperSwarm } from "./vignettes/PaperSwarm";
+import { MorphParticles } from "./MorphParticles";
 import {
   WAYPOINTS,
   pickSegment,
@@ -25,11 +30,12 @@ import {
   useVelocityRef,
 } from "./useChapterProgress";
 import { useIsMobile } from "@/lib/useIsMobile";
+import { useFx } from "@/components/site/fxStore";
 
 /**
- * Camera choreography: waypoint-lerped position/lookAt driven by Lenis progress.
- * A cinematic intro dolly (camera pulls in from z=40 → waypoint over ~1.6s)
- * lands the first frame; pointer parallax and velocity-driven z-roll add life.
+ * Camera choreography: waypoint-lerped position, always aimed at the origin so
+ * the morphing cloud stays framed while the camera orbits it. A cinematic intro
+ * dolly lands the first frame; pointer parallax and velocity roll add life.
  */
 function CameraRig({
   progressRef,
@@ -43,7 +49,7 @@ function CameraRig({
   const tmpLook = useMemo(() => new THREE.Vector3(), []);
   const lookTarget = useMemo(() => new THREE.Vector3(0, 0, 0), []);
   const posParallax = useMemo(() => new THREE.Vector2(0, 0), []);
-  const introRef = useRef(1); // 1 → 0 over the intro window
+  const introRef = useRef(1);
   const rollRef = useRef(0);
 
   useFrame((state, dt) => {
@@ -60,19 +66,15 @@ function CameraRig({
       a.look[2] + (b.look[2] - a.look[2]) * k
     );
 
-    // Cinematic intro: ease introRef → 0, pull camera back from far z.
     if (introRef.current > 0.001) {
-      introRef.current = Math.max(0, introRef.current - dt * 0.65);
-      const e = introRef.current;
-      // easeOutCubic
-      const eased = 1 - Math.pow(1 - e, 3);
-      tmpPos.z += eased * 32;
-      tmpPos.y += eased * 4;
+      introRef.current = Math.max(0, introRef.current - dt * 0.6);
+      const eased = 1 - Math.pow(1 - introRef.current, 3);
+      tmpPos.z += eased * 34;
+      tmpPos.y += eased * 3;
     }
 
-    // Subtle pointer parallax
-    posParallax.x += (state.pointer.x * 0.6 - posParallax.x) * 0.05;
-    posParallax.y += (state.pointer.y * 0.4 - posParallax.y) * 0.05;
+    posParallax.x += (state.pointer.x * 0.7 - posParallax.x) * 0.05;
+    posParallax.y += (state.pointer.y * 0.45 - posParallax.y) * 0.05;
     tmpPos.x += posParallax.x;
     tmpPos.y += posParallax.y;
 
@@ -80,7 +82,6 @@ function CameraRig({
     lookTarget.lerp(tmpLook, 0.12);
     camera.lookAt(lookTarget);
 
-    // Velocity-driven dutch-angle roll for cinematography
     const v = velocityRef.current;
     const signed = (state.pointer.x >= 0 ? 1 : -1) * v * 0.08;
     rollRef.current += (signed - rollRef.current) * 0.08;
@@ -90,42 +91,9 @@ function CameraRig({
 }
 
 /**
- * MatrixRain + ParticleField follow the camera down so they blanket every chapter.
- */
-function AmbientFollow({
-  velocityRef,
-}: {
-  velocityRef: MutableRefObject<number>;
-}) {
-  const rainRef = useRef<THREE.Group>(null);
-  const partsRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
-
-  useFrame(() => {
-    if (rainRef.current) {
-      rainRef.current.position.y +=
-        (camera.position.y - rainRef.current.position.y) * 0.1;
-    }
-    if (partsRef.current) {
-      partsRef.current.position.y +=
-        (camera.position.y - partsRef.current.position.y) * 0.1;
-    }
-  });
-
-  return (
-    <>
-      <group ref={rainRef}>
-        <MatrixRain count={700} spread={45} depth={25} velocityRef={velocityRef} />
-      </group>
-      <group ref={partsRef}>
-        <ParticleField count={400} radius={35} />
-      </group>
-    </>
-  );
-}
-
-/**
- * Fog color/near/far lerp per chapter for cinematic mood swings.
+ * Fog color/near/far lerp per chapter for cinematic mood swings around the
+ * subject (subject sits inside the near plane, so fog only tints the ambient
+ * rain/stars behind it).
  */
 const FOG_STOPS: {
   p: number;
@@ -133,18 +101,14 @@ const FOG_STOPS: {
   near: number;
   far: number;
 }[] = [
-  { p: 0.0, color: new THREE.Color("#000000"), near: 18, far: 55 },
-  { p: 0.18, color: new THREE.Color("#02110a"), near: 14, far: 46 },
-  { p: 0.42, color: new THREE.Color("#010618"), near: 12, far: 44 },
-  { p: 0.7, color: new THREE.Color("#000f1a"), near: 16, far: 52 },
-  { p: 1.0, color: new THREE.Color("#020210"), near: 18, far: 60 },
+  { p: 0.0, color: new THREE.Color("#000000"), near: 10, far: 34 },
+  { p: 0.25, color: new THREE.Color("#02120a"), near: 9, far: 30 },
+  { p: 0.5, color: new THREE.Color("#031018"), near: 9, far: 32 },
+  { p: 0.75, color: new THREE.Color("#0a0a04"), near: 10, far: 34 },
+  { p: 1.0, color: new THREE.Color("#050210"), near: 12, far: 44 },
 ];
 
-function FogRig({
-  progressRef,
-}: {
-  progressRef: MutableRefObject<number>;
-}) {
+function FogRig({ progressRef }: { progressRef: MutableRefObject<number> }) {
   const { scene } = useThree();
   const tmp = useMemo(() => new THREE.Color(), []);
 
@@ -172,88 +136,38 @@ function FogRig({
 }
 
 /**
- * Frustum-cull vignettes by camera Y distance to keep draw calls minimal.
+ * Scene-wide wireframe toggle driven by the shell's `wireframe` command.
  */
-function ChapterGate({
-  y,
-  children,
-}: {
-  y: number;
-  children: React.ReactNode;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-  const { camera } = useThree();
+function WireframeRig() {
+  const { wireframe } = useFx();
+  const { scene } = useThree();
 
-  useFrame(() => {
-    if (!groupRef.current) return;
-    groupRef.current.visible = Math.abs(camera.position.y - y) < 26;
-  });
+  useEffect(() => {
+    scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mats = Array.isArray(mesh.material)
+        ? mesh.material
+        : [mesh.material];
+      for (const m of mats) {
+        if (!m || !("wireframe" in m)) continue;
+        const mat = m as THREE.MeshBasicMaterial;
+        if (wireframe) {
+          if (mat.userData.__origWire === undefined) {
+            mat.userData.__origWire = mat.wireframe;
+          }
+          mat.wireframe = true;
+        } else if (mat.userData.__origWire !== undefined) {
+          mat.wireframe = mat.userData.__origWire;
+          delete mat.userData.__origWire;
+        }
+      }
+    });
+  }, [wireframe, scene]);
 
-  return <group ref={groupRef}>{children}</group>;
+  return null;
 }
 
-/**
- * Giant floating chapter title behind each chapter. Uses drei <Text>
- * (SDF, cheap). Rotates slowly, fades in/out based on camera Y proximity,
- * and pulses on scroll velocity so aggressive scrolls warp the type.
- */
-function ChapterTitle({
-  y,
-  text,
-  color = "#00ff41",
-  velocityRef,
-}: {
-  y: number;
-  text: string;
-  color?: string;
-  velocityRef: MutableRefObject<number>;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-  const textRef = useRef<any>(null);
-  const { camera } = useThree();
-
-  useFrame((state) => {
-    const g = groupRef.current;
-    if (!g) return;
-    const dy = camera.position.y - y;
-    const dist = Math.abs(dy);
-    g.visible = dist < 24;
-    const targetOpacity = Math.max(0, 1 - dist / 14) * 0.09;
-    if (textRef.current) {
-      const cur = textRef.current.fillOpacity ?? 0;
-      textRef.current.fillOpacity = cur + (targetOpacity - cur) * 0.1;
-      const oc = textRef.current.outlineOpacity ?? 0;
-      textRef.current.outlineOpacity = oc + (targetOpacity * 1.5 - oc) * 0.1;
-    }
-    const v = velocityRef.current;
-    g.rotation.y =
-      Math.sin(state.clock.elapsedTime * 0.15) * 0.08 + v * 0.4;
-    g.position.y = y + dy * 0.15 - v * 1.4;
-    g.scale.setScalar(1 + v * 0.15);
-  });
-
-  return (
-    <group ref={groupRef} position={[0, y, -14]}>
-      <Text
-        ref={textRef}
-        fontSize={5}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.06}
-        outlineWidth={0.03}
-        outlineColor={color}
-        fillOpacity={0}
-        outlineOpacity={0}
-      >
-        {text}
-      </Text>
-    </group>
-  );
-}
-
-// Mutated in place each frame by CAWarp so the postprocessing uniform picks up
-// the new values without recreating the effect chain.
 const CA_OFFSET = new THREE.Vector2(0.0007, 0.0009);
 
 function CAWarp({ velocityRef }: { velocityRef: MutableRefObject<number> }) {
@@ -265,44 +179,100 @@ function CAWarp({ velocityRef }: { velocityRef: MutableRefObject<number> }) {
 }
 
 /**
- * PostFX — Bloom + velocity-warped chromatic aberration + vignette.
+ * PostFX — Bloom + velocity-warped chromatic aberration + vignette, plus the
+ * shell-controlled ASCII render mode and Glitch bursts on every command.
  */
 function PostFX({ enabled }: { enabled: boolean }) {
-  if (!enabled) return null;
+  const { ascii } = useFx();
+  const [glitching, setGlitching] = useState(false);
+  const timer = useRef<number>(0);
+
+  useEffect(() => {
+    const burst = (ms: number) => {
+      setGlitching(true);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setGlitching(false), ms);
+    };
+    const onGlitch = (e: Event) =>
+      burst(((e as CustomEvent).detail?.ms as number) ?? 300);
+    const onActivity = () => burst(240);
+    window.addEventListener("termolio:glitch", onGlitch);
+    window.addEventListener("termolio:activity", onActivity);
+    return () => {
+      window.removeEventListener("termolio:glitch", onGlitch);
+      window.removeEventListener("termolio:activity", onActivity);
+      window.clearTimeout(timer.current);
+    };
+  }, []);
+
+  // The whole effect chain used to be gated behind `enabled`, so any perf dip
+  // silently killed ASCII/Glitch/CA along with Bloom. Those three are cheap
+  // full-screen passes and must always work (ASCII is a headline feature);
+  // only the expensive mipmap Bloom responds to the performance flag.
+  const effects = [
+    ...(enabled
+      ? [
+          <Bloom
+            key="bloom"
+            intensity={0.4}
+            luminanceThreshold={0.62}
+            luminanceSmoothing={0.85}
+            mipmapBlur
+          />,
+        ]
+      : []),
+    <ChromaticAberration
+      key="ca"
+      offset={CA_OFFSET}
+      blendFunction={BlendFunction.NORMAL}
+      radialModulation={false}
+      modulationOffset={0.15}
+    />,
+    ...(ascii
+      ? [
+          <ASCII
+            key="ascii"
+            fontSize={54}
+            cellSize={10}
+            characters=" .:-=+*#%@"
+            color="#00ff41"
+          />,
+        ]
+      : []),
+    <Glitch
+      key="glitch"
+      active={glitching}
+      mode={GlitchMode.CONSTANT_WILD}
+      strength={new THREE.Vector2(0.15, 0.35)}
+      ratio={0.85}
+    />,
+    <Vignette key="vignette" eskil={false} offset={0.2} darkness={0.85} />,
+  ];
+
+  // Key on the flags that change the pass count so the composer rebuilds its
+  // chain cleanly instead of trying to diff effect children.
   return (
-    <EffectComposer>
-      <Bloom
-        intensity={0.55}
-        luminanceThreshold={0.32}
-        luminanceSmoothing={0.9}
-        mipmapBlur
-      />
-      <ChromaticAberration
-        offset={CA_OFFSET}
-        blendFunction={BlendFunction.NORMAL}
-        radialModulation={false}
-        modulationOffset={0.15}
-      />
-      <Vignette eskil={false} offset={0.22} darkness={0.82} />
+    <EffectComposer key={`${enabled ? "b" : ""}${ascii ? "a" : ""}`}>
+      {effects}
     </EffectComposer>
   );
 }
 
 /**
- * Pared-down scene for phones: static camera, HeroCore that fades on scroll,
- * and lighter ambient rain/particles. No vignettes, no giant chapter titles,
- * no camera choreography — those are the pieces that fought with content on
- * small viewports.
+ * Pared-down scene for phones: static camera, the same morphing protagonist at
+ * a lower particle count, and lighter ambient rain/stars.
  */
 function MobileScene({
   progressRef,
+  velocityRef,
 }: {
   progressRef: MutableRefObject<number>;
+  velocityRef: MutableRefObject<number>;
 }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-0">
       <Canvas
-        camera={{ position: [0, 0.5, 7.5], fov: 55 }}
+        camera={{ position: [0, 0, 10], fov: 55 }}
         dpr={[1, 1.5]}
         gl={{
           antialias: false,
@@ -314,25 +284,21 @@ function MobileScene({
         frameloop="always"
       >
         <color attach="background" args={["#000000"]} />
-        <fog attach="fog" args={["#000000", 14, 40]} />
+        <fog attach="fog" args={["#000000", 12, 40]} />
         <Suspense fallback={null}>
-          <ambientLight intensity={0.32} />
-          <pointLight position={[4, 4, 4]} intensity={0.7} color="#00ff41" />
-          <pointLight position={[-4, -3, 2]} intensity={0.45} color="#00e5ff" />
-
-          <MatrixRain count={220} spread={28} depth={18} />
-          <ParticleField count={150} radius={22} />
-
-          {/* Shrink + drop the orb so it sits below the H1 instead of over it,
-              and push it back on Z so it reads as ambient depth, not content. */}
-          <group scale={0.42} position={[0, -3.4, -3]}>
-            <HeroCore progressRef={progressRef} />
-          </group>
-
+          <ambientLight intensity={0.3} />
+          <MatrixRain count={200} spread={26} depth={16} />
+          <ParticleField count={120} radius={20} />
+          <MorphParticles
+            count={22000}
+            size={3.0}
+            progressRef={progressRef}
+            velocityRef={velocityRef}
+          />
           <EffectComposer>
             <Bloom
-              intensity={0.4}
-              luminanceThreshold={0.38}
+              intensity={0.6}
+              luminanceThreshold={0.3}
               luminanceSmoothing={0.9}
               mipmapBlur
             />
@@ -345,17 +311,24 @@ function MobileScene({
   );
 }
 
+// Native display DPR, capped at 2. Rendering the WebGL buffer below the
+// display's pixel ratio (e.g. 1.35 on a Retina 2x panel) makes the browser
+// upscale it — smearing every crisp particle. On Retina we must render at 2.
+const MAX_DPR =
+  typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1.5;
+
 export function BackgroundScene() {
   const progressRef = useProgressRef();
   const velocityRef = useVelocityRef();
-  const [dpr, setDpr] = useState<number>(1.35);
+  const [dpr, setDpr] = useState<number>(MAX_DPR);
   const [fx, setFx] = useState(true);
   const isMobile = useIsMobile();
 
-  // Pre-hydration: render nothing (the MobileBackground CSS layer covers it).
   if (isMobile === null) return null;
-  // Phones get a pared-down scene — HeroCore + ambient rain/particles only.
-  if (isMobile) return <MobileScene progressRef={progressRef} />;
+  if (isMobile)
+    return (
+      <MobileScene progressRef={progressRef} velocityRef={velocityRef} />
+    );
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0">
@@ -372,14 +345,16 @@ export function BackgroundScene() {
         frameloop="always"
       >
         <color attach="background" args={["#000000"]} />
-        <fog attach="fog" args={["#000000", 18, 55]} />
+        <fog attach="fog" args={["#000000", 10, 34]} />
         <PerformanceMonitor
           onDecline={() => {
-            setDpr(1);
+            // Never drop below 1.5 — half-res on a Retina panel looks worse
+            // than a few dropped frames. Shed the expensive Bloom instead.
+            setDpr(Math.max(1.5, MAX_DPR - 0.5));
             setFx(false);
           }}
           onIncline={() => {
-            setDpr(1.35);
+            setDpr(MAX_DPR);
             setFx(true);
           }}
         />
@@ -387,64 +362,28 @@ export function BackgroundScene() {
           <CameraRig progressRef={progressRef} velocityRef={velocityRef} />
           <FogRig progressRef={progressRef} />
 
-          <ambientLight intensity={0.28} />
-          <pointLight position={[5, 5, 5]} intensity={0.85} color="#00ff41" />
-          <pointLight position={[-5, -5, 3]} intensity={0.55} color="#00e5ff" />
+          <ambientLight intensity={0.3} />
+          <pointLight position={[5, 5, 5]} intensity={0.8} color="#00ff41" />
+          <pointLight position={[-5, -5, 3]} intensity={0.5} color="#00e5ff" />
 
-          <AmbientFollow velocityRef={velocityRef} />
+          {/* Ambient world — rain + stars around the subject, no camera follow
+              now that everything lives at the origin. */}
+          <MatrixRain
+            count={600}
+            spread={40}
+            depth={24}
+            velocityRef={velocityRef}
+          />
+          <ParticleField count={360} radius={32} />
 
-          {/* Giant floating chapter titles — one per waypoint */}
-          <ChapterTitle y={0} text="HELLO_WORLD" velocityRef={velocityRef} />
-          <ChapterTitle
-            y={-14}
-            text="./TERMINAL"
-            color="#00ff41"
-            velocityRef={velocityRef}
-          />
-          <ChapterTitle
-            y={-34}
-            text="PROJECTS.DIR"
-            color="#00e5ff"
-            velocityRef={velocityRef}
-          />
-          <ChapterTitle
-            y={-58}
-            text="AWARDS//"
-            color="#ffb454"
-            velocityRef={velocityRef}
-          />
-          <ChapterTitle
-            y={-80}
-            text="ARTICLES.LOG"
-            color="#7a3fbf"
+          {/* The protagonist. */}
+          <MorphParticles
+            count={34000}
+            progressRef={progressRef}
             velocityRef={velocityRef}
           />
 
-          {/* Hero chapter — reused HeroCore, positioned at world origin */}
-          <ChapterGate y={0}>
-            <HeroCore progressRef={progressRef} />
-          </ChapterGate>
-
-          {/* Terminal chapter */}
-          <ChapterGate y={-14}>
-            <TerminalMonolith y={-14} />
-          </ChapterGate>
-
-          {/* Projects chapter */}
-          <ChapterGate y={-34}>
-            <ProjectHoloArc y={-34} />
-          </ChapterGate>
-
-          {/* Awards chapter */}
-          <ChapterGate y={-58}>
-            <AwardConstellation y={-58} />
-          </ChapterGate>
-
-          {/* Articles/Footer chapter */}
-          <ChapterGate y={-80}>
-            <PaperSwarm y={-80} />
-          </ChapterGate>
-
+          <WireframeRig />
           <CAWarp velocityRef={velocityRef} />
           <PostFX enabled={fx} />
           <Preload all />

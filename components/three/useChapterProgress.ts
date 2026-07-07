@@ -9,12 +9,17 @@ export type Waypoint = {
   look: [number, number, number];
 };
 
+// The camera orbits ONE subject at the origin — the morphing particle cloud —
+// instead of travelling down a corridor of separate props. Progress stops line
+// up with the morph's shape boundaries (0, .25, .5, .75, 1) so each shape gets
+// its own camera angle: front → swing right → swing left/up → high peak →
+// pull back wide for the galaxy dispersal.
 export const WAYPOINTS: Waypoint[] = [
-  { p: 0.0, pos: [0, 0, 8], look: [0, 0, 0] },
-  { p: 0.18, pos: [2, -14, 9], look: [0, -14, 0] },
-  { p: 0.42, pos: [-3, -34, 10], look: [0, -34, 0] },
-  { p: 0.7, pos: [0, -58, 14], look: [0, -58, 0] },
-  { p: 1.0, pos: [0, -80, 12], look: [0, -82, 0] },
+  { p: 0.0, pos: [0, 0, 9], look: [0, 0, 0] },
+  { p: 0.25, pos: [6.5, -1.5, 6.5], look: [0, 0, 0] },
+  { p: 0.5, pos: [-6, 2.5, 7], look: [0, 0, 0] },
+  { p: 0.75, pos: [3.5, 5, 7.5], look: [0, 0, 0] },
+  { p: 1.0, pos: [0, 1.5, 13], look: [0, 0, 0] },
 ];
 
 export function useProgressRef() {
