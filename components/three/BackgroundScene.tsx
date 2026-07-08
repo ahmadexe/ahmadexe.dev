@@ -23,6 +23,8 @@ import * as THREE from "three";
 import { MatrixRain } from "./MatrixRain";
 import { ParticleField } from "./ParticleField";
 import { MorphParticles } from "./MorphParticles";
+import { WireframeTerrain } from "./WireframeTerrain";
+import { OrbitalRings } from "./OrbitalRings";
 import {
   WAYPOINTS,
   pickSegment,
@@ -65,6 +67,14 @@ function CameraRig({
       a.look[1] + (b.look[1] - a.look[1]) * k,
       a.look[2] + (b.look[2] - a.look[2]) * k
     );
+
+    // FOV breathes with the move — tight on the fly-by, wide on the finale.
+    const cam = camera as THREE.PerspectiveCamera;
+    const fovTarget = a.fov + (b.fov - a.fov) * k;
+    if (Math.abs(cam.fov - fovTarget) > 0.01) {
+      cam.fov += (fovTarget - cam.fov) * 0.08;
+      cam.updateProjectionMatrix();
+    }
 
     if (introRef.current > 0.001) {
       introRef.current = Math.max(0, introRef.current - dt * 0.6);
@@ -214,8 +224,8 @@ function PostFX({ enabled }: { enabled: boolean }) {
       ? [
           <Bloom
             key="bloom"
-            intensity={0.4}
-            luminanceThreshold={0.62}
+            intensity={0.55}
+            luminanceThreshold={0.5}
             luminanceSmoothing={0.85}
             mipmapBlur
           />,
@@ -375,6 +385,12 @@ export function BackgroundScene() {
             velocityRef={velocityRef}
           />
           <ParticleField count={360} radius={32} />
+
+          {/* The set — wire terrain below, gyroscopic rings around the
+              subject. The fly-by waypoint passes inside the outer rings, so
+              scrolling produces true near-field parallax. */}
+          <WireframeTerrain velocityRef={velocityRef} />
+          <OrbitalRings velocityRef={velocityRef} />
 
           {/* The protagonist. */}
           <MorphParticles

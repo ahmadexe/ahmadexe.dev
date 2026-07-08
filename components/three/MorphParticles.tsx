@@ -132,7 +132,9 @@ const VERT = /* glsl */ `
     // Curl-noise flow keeps the cloud alive but stays gentle at rest so each
     // shape's silhouette reads crisply; velocity + transition inflate it into
     // an explosion on hard scrolls and between shapes.
-    float turb = 0.05 + uVelocity * 1.5 + transition * 1.3;
+    // Transition scatter kept moderate — the close fly-by waypoint means an
+    // aggressive explosion fills the whole frame with haze behind the text.
+    float turb = 0.05 + uVelocity * 1.2 + transition * 0.85;
     vec3 flow = curlNoise(pos * 0.32 + uTime * 0.045);
     pos += flow * turb * (0.2 + aRnd.x * 0.55);
 
@@ -150,7 +152,10 @@ const VERT = /* glsl */ `
     // points recede — restoring a legible 3D sphere instead of TV static.
     vec4 centerView = modelViewMatrix * vec4(0.0, 0.0, 0.0, 1.0);
     float facing = smoothstep(-2.8, 2.8, mv.z - centerView.z);  // 0 back, 1 front
-    float vForm = 0.25 + 0.75 * facing;
+    // NB: assign the varying — declaring a local "float vForm" here would
+    // shadow it and leave the fragment shader reading 0, multiplying the
+    // whole cloud to invisible.
+    vForm = 0.25 + 0.75 * facing;
 
     // Size: per-particle variation, perspective attenuation, a pulse, and a
     // swell during transitions so morphs visibly surge.

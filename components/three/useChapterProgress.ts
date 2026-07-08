@@ -7,19 +7,24 @@ export type Waypoint = {
   p: number;
   pos: [number, number, number];
   look: [number, number, number];
+  fov: number;
 };
 
 // The camera orbits ONE subject at the origin — the morphing particle cloud —
-// instead of travelling down a corridor of separate props. Progress stops line
-// up with the morph's shape boundaries (0, .25, .5, .75, 1) so each shape gets
-// its own camera angle: front → swing right → swing left/up → high peak →
-// pull back wide for the galaxy dispersal.
+// instead of travelling down a corridor of separate props. Extra stops between
+// the morph boundaries (0, .25, .5, .75, 1) give each chapter a travelling
+// move instead of a single held angle: a close fly-by through the orbital
+// rings, a high crane, then a wide pull-back for the galaxy dispersal. FOV
+// breathes with the move — tight on the fly-by, wide on the finale — which is
+// what sells the "flying through a world" feel.
 export const WAYPOINTS: Waypoint[] = [
-  { p: 0.0, pos: [0, 0, 9], look: [0, 0, 0] },
-  { p: 0.25, pos: [6.5, -1.5, 6.5], look: [0, 0, 0] },
-  { p: 0.5, pos: [-6, 2.5, 7], look: [0, 0, 0] },
-  { p: 0.75, pos: [3.5, 5, 7.5], look: [0, 0, 0] },
-  { p: 1.0, pos: [0, 1.5, 13], look: [0, 0, 0] },
+  { p: 0.0, pos: [0, 0.4, 10], look: [-2.6, 0.3, 0], fov: 50 }, // hero: subject right of the headline
+  { p: 0.13, pos: [4.5, -1.2, 7.5], look: [-0.5, 0, 0], fov: 54 }, // swing right, drop low
+  { p: 0.3, pos: [7.2, 1.2, 3.2], look: [0, 0, 0], fov: 62 }, // close fly-by inside the rings
+  { p: 0.5, pos: [-5.8, 2.6, 6.6], look: [0, 0, 0], fov: 55 }, // cross to the far side
+  { p: 0.66, pos: [-2, 6.8, 4.6], look: [0, 0.6, 0], fov: 50 }, // high crane over the peak
+  { p: 0.82, pos: [3.6, 4.4, 8.2], look: [0, 0.2, 0], fov: 47 }, // settle back, framing the diamond
+  { p: 1.0, pos: [0, 2.4, 14.5], look: [0, 0, 0], fov: 42 }, // wide pull-back into the galaxy
 ];
 
 export function useProgressRef() {
