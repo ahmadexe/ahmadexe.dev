@@ -197,6 +197,26 @@ body {
     0 0 24px rgba(0, 229, 255, 0.25);
 }
 
+/* Soft dark plate behind copy that sits over the WebGL scene. The particle
+   cloud parks dead-center behind some chapters' text; the global scrim is
+   lightest there, so body copy needs local contrast. The radial fade + blur
+   feather the plate into the scene so it reads as depth-of-field, not a box. */
+.text-shield {
+  position: relative;
+}
+.text-shield::before {
+  content: "";
+  position: absolute;
+  inset: -1.5rem -2rem;
+  background: rgba(0, 0, 0, 0.72);
+  /* Blurring a solid plate feathers only its edges — the interior keeps a
+     uniform alpha, so contrast holds across the whole block (a radial fade
+     dies out before reaching the corners of a tall column). */
+  filter: blur(22px);
+  z-index: -1;
+  pointer-events: none;
+}
+
 .shadow-matrix {
   box-shadow:
     0 0 0 1px rgba(0, 255, 65, 0.25),

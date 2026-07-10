@@ -24,6 +24,7 @@ import { MatrixRain } from "./MatrixRain";
 import { ParticleField } from "./ParticleField";
 import { MorphParticles } from "./MorphParticles";
 import { WireframeTerrain } from "./WireframeTerrain";
+import { DataSpires } from "./DataSpires";
 import { OrbitalRings } from "./OrbitalRings";
 import {
   WAYPOINTS,
@@ -92,10 +93,14 @@ function CameraRig({
     lookTarget.lerp(tmpLook, 0.12);
     camera.lookAt(lookTarget);
 
+    // Keyframed stunt roll (the corkscrew) + a velocity-driven lean, applied
+    // about the view axis AFTER lookAt so it is a true barrel roll no matter
+    // where the camera points (rotation.z is only a roll when facing -z).
     const v = velocityRef.current;
-    const signed = (state.pointer.x >= 0 ? 1 : -1) * v * 0.08;
-    rollRef.current += (signed - rollRef.current) * 0.08;
-    camera.rotation.z = rollRef.current;
+    const lean = (state.pointer.x >= 0 ? 1 : -1) * v * 0.08;
+    const rollTarget = a.roll + (b.roll - a.roll) * k + lean;
+    rollRef.current += (rollTarget - rollRef.current) * 0.1;
+    camera.rotateZ(rollRef.current);
   });
   return null;
 }
@@ -386,10 +391,12 @@ export function BackgroundScene() {
           />
           <ParticleField count={360} radius={32} />
 
-          {/* The set — wire terrain below, gyroscopic rings around the
-              subject. The fly-by waypoint passes inside the outer rings, so
-              scrolling produces true near-field parallax. */}
+          {/* The set — wire terrain below, a forest of data spires around the
+              orbit band, gyroscopic rings around the subject. The spires are
+              what make the stunts legible: the deck-skim threads between
+              them and the corkscrew sweeps them across the whole frame. */}
           <WireframeTerrain velocityRef={velocityRef} />
+          <DataSpires velocityRef={velocityRef} />
           <OrbitalRings velocityRef={velocityRef} />
 
           {/* The protagonist. */}

@@ -63,7 +63,7 @@ const FRAG = /* glsl */ `
     float relief = 0.55 + 0.45 * smoothstep(-1.6, 1.9, vHeight);
 
     vec3 col = mix(uColorA, uColorB, pulse);
-    float a = line * fade * relief * (0.16 + pulse * 0.5 + uVelocity * 0.25);
+    float a = line * fade * relief * (0.22 + pulse * 0.6 + uVelocity * 0.25);
     gl_FragColor = vec4(col, a);
   }
 `;

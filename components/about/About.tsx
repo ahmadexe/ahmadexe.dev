@@ -63,7 +63,7 @@ export function About() {
         />
 
         <div ref={ref} className="grid lg:grid-cols-[1.2fr_1fr] gap-12 items-start">
-          <div>
+          <div className="text-shield">
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
