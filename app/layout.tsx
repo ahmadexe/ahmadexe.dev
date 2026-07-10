@@ -203,6 +203,7 @@ const jsonLd = {
       name: SEO.title,
       isPartOf: { "@id": `${SITE_URL}/#website` },
       about: { "@id": `${SITE_URL}/#person` },
+      mainEntity: { "@id": `${SITE_URL}/#person` },
       description: SEO.description,
       inLanguage: "en-US",
     },
