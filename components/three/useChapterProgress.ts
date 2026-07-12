@@ -33,8 +33,26 @@ export const WAYPOINTS: Waypoint[] = [
   { p: 0.68, pos: [-3.0, 8.6, 2.8], look: [0, 0.4, 0], fov: 44, roll: TAU }, // vertigo crane: rockets up while FOV clamps tight
   { p: 0.78, pos: [2.6, 10.8, 2.2], look: [0, 0, 0], fov: 40, roll: TAU }, // god shot: near-vertical look-down through the spires
   { p: 0.9, pos: [4.4, 4.2, 9.2], look: [0, 0.2, 0], fov: 47, roll: TAU }, // swoop back down, framing the diamond
-  { p: 1.0, pos: [0, 2.4, 14.5], look: [0, 0, 0], fov: 42, roll: TAU }, // wide pull-back into the galaxy
+  { p: 1.0, pos: [0, 3.2, 14.5], look: [0, 1.0, 0], fov: 44, roll: TAU }, // wide pull-back — galaxy low, nebula sky and ring gate above
 ];
+
+/** Position within the current shape morph, 0..1 (5 shapes → 4 segments). */
+export function morphOf(p: number) {
+  const c = Math.min(Math.max(p, 0), 0.9999) * 4;
+  return c - Math.floor(c);
+}
+
+/**
+ * Scene-wide morph pulse: peaks mid-transition (when the particle cloud
+ * scatters) and is gated by scroll velocity so a page resting mid-chapter
+ * doesn't hold a permanent flash — the sky, terrain shockwave, ring gate and
+ * camera kick all key off this one curve.
+ */
+export function pulseOf(morph: number, velocity: number) {
+  return (
+    Math.sin(morph * Math.PI) * (0.3 + 0.7 * Math.min(1, velocity * 2.5))
+  );
+}
 
 export function useProgressRef() {
   const ref = useRef(0);

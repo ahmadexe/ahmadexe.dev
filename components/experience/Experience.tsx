@@ -17,7 +17,7 @@ export function Experience() {
           subtitle="Places, in reverse chronological order."
         />
 
-        <div className="relative max-w-4xl mx-auto pl-8 md:pl-16">
+        <div className="text-shield relative max-w-4xl mx-auto pl-8 md:pl-16">
           {/* vertical spine */}
           <div className="absolute left-0 md:left-6 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-matrix/40 to-transparent" />
 

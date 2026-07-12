@@ -1,9 +1,9 @@
 "use client";
 
-import { MutableRefObject, useEffect, useMemo } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { WAYPOINTS } from "./useChapterProgress";
+import { WAYPOINTS, morphOf, pulseOf } from "./useChapterProgress";
 
 // A forest of glowing data monoliths rising from the wire terrain. This is
 // what makes the camera stunts LEGIBLE: motion is only felt when structures
@@ -36,6 +36,8 @@ const FRAG = /* glsl */ `
 
   uniform float uTime;
   uniform float uVelocity;
+  uniform float uMorph;   // 0..1 within the current shape morph
+  uniform float uPulse;   // velocity-gated morph flash
   uniform vec3 uColorA;
   uniform vec3 uColorB;
 
@@ -58,8 +60,12 @@ const FRAG = /* glsl */ `
     // Thin out toward the tip — spires taper into the dark instead of capping.
     float tip = 1.0 - vLocalY * 0.45;
 
-    vec3 col = mix(uColorA, uColorB, clamp(pulse + vLocalY * 0.3, 0.0, 1.0));
-    float a = line * fade * tip * (0.3 + pulse * 0.9 + uVelocity * 0.25);
+    // Terrain shockwave lighting the city in a wave as it passes through.
+    float shock = smoothstep(3.0, 0.0, abs(length(vWorld.xz) - uMorph * 60.0)) * uPulse;
+
+    vec3 col = mix(uColorA, uColorB, clamp(pulse + vLocalY * 0.3 + shock, 0.0, 1.0));
+    float a = line * fade * tip *
+      (0.3 + pulse * 0.9 + uVelocity * 0.25 + shock * 1.1);
     gl_FragColor = vec4(col, a);
   }
 `;
@@ -102,8 +108,10 @@ const CLEARANCE = 2.6; // min xz distance from any camera path segment
 const FLOOR_Y = -5.4; // matches WireframeTerrain
 
 export function DataSpires({
+  progressRef,
   velocityRef,
 }: {
+  progressRef?: MutableRefObject<number>;
   velocityRef?: MutableRefObject<number>;
 }) {
   const geometry = useMemo(() => {
@@ -118,6 +126,8 @@ export function DataSpires({
         uniforms: {
           uTime: { value: 0 },
           uVelocity: { value: 0 },
+          uMorph: { value: 0 },
+          uPulse: { value: 0 },
           uColorA: { value: new THREE.Color("#00ff41") },
           uColorB: { value: new THREE.Color("#00e5ff") },
         },
@@ -184,11 +194,19 @@ export function DataSpires({
     [geometry, material, mesh]
   );
 
+  const easedP = useRef(0);
+
   useFrame((state) => {
     material.uniforms.uTime.value = state.clock.elapsedTime;
     const v = velocityRef?.current ?? 0;
     const u = material.uniforms.uVelocity;
     u.value += (v - u.value) * 0.08;
+
+    // Track the terrain shockwave (same easing as the morph cloud).
+    easedP.current += ((progressRef?.current ?? 0) - easedP.current) * 0.08;
+    const m = morphOf(easedP.current);
+    material.uniforms.uMorph.value = m;
+    material.uniforms.uPulse.value = pulseOf(m, v);
   });
 
   return <primitive object={mesh} />;

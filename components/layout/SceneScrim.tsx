@@ -10,14 +10,14 @@ import { useLenis } from "lenis/react";
  * chapters (Hero/Awards) let the WebGL sing.
  */
 const LUT: [number, number][] = [
-  [0.0, 0.4],
-  [0.14, 0.55],
-  [0.28, 0.75],
-  [0.45, 0.82],
-  [0.58, 0.78],
-  [0.7, 0.6],
-  [0.82, 0.72],
-  [1.0, 0.7],
+  [0.0, 0.45],
+  [0.14, 0.6],
+  [0.28, 0.8],
+  [0.45, 0.85],
+  [0.58, 0.85],
+  [0.7, 0.68],
+  [0.82, 0.78],
+  [1.0, 0.72],
 ];
 
 function sample(t: number) {
@@ -61,7 +61,7 @@ export function SceneScrim() {
       className="pointer-events-none fixed inset-0 z-[1] transition-none"
       style={{
         background:
-          "radial-gradient(ellipse at center, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.85) 100%)",
+          "radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.68) 55%, rgba(0,0,0,0.92) 100%)",
         opacity: 0.35,
       }}
     />

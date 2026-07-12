@@ -26,9 +26,15 @@ import { MorphParticles } from "./MorphParticles";
 import { WireframeTerrain } from "./WireframeTerrain";
 import { DataSpires } from "./DataSpires";
 import { OrbitalRings } from "./OrbitalRings";
+import { CosmicVista } from "./CosmicVista";
+import { EclipsePlanet } from "./EclipsePlanet";
+import { RingGate } from "./RingGate";
+import { Comets } from "./Comets";
 import {
   WAYPOINTS,
+  morphOf,
   pickSegment,
+  pulseOf,
   useProgressRef,
   useVelocityRef,
 } from "./useChapterProgress";
@@ -69,9 +75,15 @@ function CameraRig({
       a.look[2] + (b.look[2] - a.look[2]) * k
     );
 
-    // FOV breathes with the move — tight on the fly-by, wide on the finale.
+    // Scene-wide morph pulse: an FOV punch and handheld shake land with the
+    // particle scatter / terrain shockwave, so every transition hits the
+    // camera too instead of only the set.
+    const pulse = pulseOf(morphOf(t), velocityRef.current);
+
+    // FOV breathes with the move — tight on the fly-by, wide on the finale —
+    // and kicks wide mid-morph.
     const cam = camera as THREE.PerspectiveCamera;
-    const fovTarget = a.fov + (b.fov - a.fov) * k;
+    const fovTarget = a.fov + (b.fov - a.fov) * k + pulse * 5;
     if (Math.abs(cam.fov - fovTarget) > 0.01) {
       cam.fov += (fovTarget - cam.fov) * 0.08;
       cam.updateProjectionMatrix();
@@ -101,6 +113,15 @@ function CameraRig({
     const rollTarget = a.roll + (b.roll - a.roll) * k + lean;
     rollRef.current += (rollTarget - rollRef.current) * 0.1;
     camera.rotateZ(rollRef.current);
+
+    // Handheld micro-shake, scaled by scroll speed + the morph pulse. Applied
+    // after lookAt so it reads as a screen-space tremor, never a re-aim.
+    const shake = v * 0.1 + pulse * 0.05;
+    if (shake > 0.001) {
+      const tt = state.clock.elapsedTime;
+      camera.position.x += Math.sin(tt * 11.3) * Math.sin(tt * 3.1) * shake * 0.35;
+      camera.position.y += Math.sin(tt * 13.7 + 1.7) * Math.sin(tt * 4.3) * shake * 0.3;
+    }
   });
   return null;
 }
@@ -302,6 +323,11 @@ function MobileScene({
         <fog attach="fog" args={["#000000", 12, 40]} />
         <Suspense fallback={null}>
           <ambientLight intensity={0.3} />
+          <CosmicVista
+            progressRef={progressRef}
+            velocityRef={velocityRef}
+            quality="low"
+          />
           <MatrixRain count={200} spread={26} depth={16} />
           <ParticleField count={120} radius={20} />
           <MorphParticles
@@ -381,6 +407,15 @@ export function BackgroundScene() {
           <pointLight position={[5, 5, 5]} intensity={0.8} color="#00ff41" />
           <pointLight position={[-5, -5, 3]} intensity={0.5} color="#00e5ff" />
 
+          {/* The heavens — a chapter-graded nebula sky, a colossal ring-gate
+              megastructure and an eclipsed planet on opposite horizons for
+              scale, and meteors streaking the deep background. These are the
+              vistas the stunt camera sweeps across. */}
+          <CosmicVista progressRef={progressRef} velocityRef={velocityRef} />
+          <EclipsePlanet />
+          <RingGate progressRef={progressRef} velocityRef={velocityRef} />
+          <Comets velocityRef={velocityRef} />
+
           {/* Ambient world — rain + stars around the subject, no camera follow
               now that everything lives at the origin. */}
           <MatrixRain
@@ -391,12 +426,12 @@ export function BackgroundScene() {
           />
           <ParticleField count={360} radius={32} />
 
-          {/* The set — wire terrain below, a forest of data spires around the
-              orbit band, gyroscopic rings around the subject. The spires are
-              what make the stunts legible: the deck-skim threads between
-              them and the corkscrew sweeps them across the whole frame. */}
-          <WireframeTerrain velocityRef={velocityRef} />
-          <DataSpires velocityRef={velocityRef} />
+          {/* The set — wire terrain below rising into a mountain rim at the
+              horizon, a forest of data spires around the orbit band,
+              gyroscopic rings around the subject. The spires make the stunts
+              legible, and the morph shockwave lights them in a wave. */}
+          <WireframeTerrain progressRef={progressRef} velocityRef={velocityRef} />
+          <DataSpires progressRef={progressRef} velocityRef={velocityRef} />
           <OrbitalRings velocityRef={velocityRef} />
 
           {/* The protagonist. */}

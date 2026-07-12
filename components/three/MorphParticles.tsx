@@ -273,7 +273,7 @@ export function MorphParticles({
               ? Math.min(window.devicePixelRatio, 2)
               : 1,
         },
-        uOpacity: { value: 0.95 },
+        uOpacity: { value: 0.8 },
         uColorA: { value: a },
         uColorB: { value: b },
       },
